@@ -8,8 +8,12 @@
 - `IDatabaseService.ts` : กำหนด interface และ type สำหรับการติดต่อกับฐานข้อมูล เช่น การสร้าง, อัปเดต, ลบ, ค้นหา, นับจำนวนข้อมูล ฯลฯ
 - `InMemoryDatabaseService.ts` : ตัวอย่าง implementation ของ `IDatabaseService` ที่เก็บข้อมูลไว้ในหน่วยความจำ (เหมาะสำหรับทดสอบหรือใช้งานเบื้องต้น)
 - `InMemoryDatabaseService.test.ts` : ไฟล์ unit test สำหรับทดสอบการทำงานของ `InMemoryDatabaseService`
+- `DynamoDbDatabaseService.ts` : implementation ของ `IDatabaseService` สำหรับ Amazon DynamoDB โดยใช้ AWS SDK v3
+- `DynamoDbDatabaseService.test.ts` : ไฟล์ unit test สำหรับทดสอบการทำงานของ `DynamoDbDatabaseService`
 
 ## วิธีการใช้งาน
+
+### 1. การใช้งาน In-Memory Database Service
 
 1. **สร้าง instance ของ Database Service**
    ```typescript
@@ -17,7 +21,45 @@
    const db = InMemoryDatabaseService.getInstance();
    ```
 
-2. **ใช้งานเมธอดต่าง ๆ**
+### 2. การใช้งาน DynamoDB Service
+
+1. **ติดตั้ง dependencies**
+   ```sh
+   cd source
+   npm install @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
+   ```
+
+2. **กำหนด AWS credentials** (เลือกวิธีหนึ่ง)
+   - ผ่าน environment variables:
+     ```sh
+     export AWS_ACCESS_KEY_ID=your_access_key
+     export AWS_SECRET_ACCESS_KEY=your_secret_key
+     export AWS_REGION=your_region
+     ```
+   - ผ่าน AWS Config file (`~/.aws/credentials`)
+   - ผ่าน IAM Role (สำหรับ EC2/Lambda)
+
+3. **สร้าง instance ของ DynamoDB Service**
+   ```typescript
+   import { DynamoDbDatabaseService } from './modules/adapter/database/DynamoDbDatabaseService';
+   
+   // ใช้ default table และ region
+   const db = DynamoDbDatabaseService.getInstance();
+   
+   // หรือระบุ table และ region เอง
+   const db = new DynamoDbDatabaseService('MyCustomTable', 'ap-southeast-1');
+   
+   // หรือใช้ project-specific instance
+   const projectDb = DynamoDbDatabaseService.getInstanceByProjectId('project123');
+   ```
+
+4. **สร้าง DynamoDB table** (ถ้ายังไม่มี)
+   ```typescript
+   // สร้าง table อัตโนมัติ (สำหรับ development/testing)
+   await db.ensureTable();
+   ```
+
+### 3. วิธีใช้งานเมธอดต่าง ๆ (ใช้ได้กับทั้ง In-Memory และ DynamoDB)
    - `create(obj)` : สร้างข้อมูลใหม่
    - `update(obj)` : อัปเดตข้อมูล
    - `delete(projectId, contentType, contentId, version)` : ลบข้อมูล
@@ -69,4 +111,31 @@
 
 **หมายเหตุ:**
 - สามารถเพิ่ม implementation ใหม่ของ `IDatabaseService` ได้ เช่น เชื่อมต่อกับฐานข้อมูลจริง (MySQL, MongoDB ฯลฯ) โดยยึดตาม interface เดิม
+- DynamoDB Service รองรับการค้นหาที่ซับซ้อนด้วย nested AND/OR conditions
+- DynamoDB table structure: Partition Key = `projectId`, Sort Key = `contentType#contentId#version`
+- สำหรับ production ควรใช้ IAM Role แทนการใส่ credentials โดยตรง
 - ตัวอย่างนี้เหมาะสำหรับ dev จบใหม่หรือผู้ที่ต้องการเข้าใจโครงสร้างและการใช้งานเบื้องต้นของโมดูลนี้
+
+## การ Deploy DynamoDB Table
+
+สำหรับ production ควรสร้าง DynamoDB table ผ่าน Infrastructure as Code เช่น CloudFormation หรือ Terraform:
+
+```yaml
+# CloudFormation template
+Resources:
+  ThothObjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ThothObjects
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+```
