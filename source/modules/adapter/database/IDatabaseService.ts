@@ -17,6 +17,11 @@ export enum SearchLogicalOperator {
     OR = 'OR',
 }
 
+export enum SortDirection {
+    ASC = 'ASC',
+    DESC = 'DESC',
+}
+
 export interface ProjectObject {
     projectId: string;
     contentType: string;
@@ -40,14 +45,14 @@ export interface PaginationOption<T = any> {
     page?: number;
     limit?: number;
     sortBy?: keyof T;
-    sortDirection?: 'asc' | 'desc';
+    sortDirection?: SortDirection;
 }
 
 export interface IDatabaseService<T extends { [key: string]: any } = ProjectObject> {
     create(obj: T): Promise<T>;
     update(obj: T): Promise<T>;
     delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean>;
-    getById(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null>;
+    getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null>;
     search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[], total: number }>;
     exists(condition: SearchOption<T>): Promise<boolean>;
     count(condition: SearchOption<T>): Promise<number>;
@@ -57,4 +62,4 @@ export interface IDatabaseServiceConstructor<T extends { [key: string]: any } = 
     new (): IDatabaseService<T>;
     getInstance(): IDatabaseService<T>;
     getInstanceByProjectId(projectId: string): IDatabaseService<T>;
-} 
+}
