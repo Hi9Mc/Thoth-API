@@ -12,7 +12,7 @@ class MockProjectObjectRepository implements ProjectObjectRepository<ProjectObje
     private storage: Map<string, ProjectObject> = new Map();
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.projectId}:${key.contentType}:${key.contentId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
     }
 
     async create(obj: ProjectObject): Promise<ProjectObject> {
@@ -85,18 +85,18 @@ describe('ProjectObjectRepository Domain Interface', () => {
 
     describe('CRUD Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Test Document',
             content: 'This is test content'
         };
 
         const testKey: ProjectObjectKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -159,7 +159,7 @@ describe('ProjectObjectRepository Domain Interface', () => {
             logic: SearchLogicalOperator.AND,
             conditions: [
                 {
-                    key: 'projectId',
+                    key: 'tenantId',
                     value: 'test-project',
                     operator: SearchConditionOperator.EQUALS
                 }
@@ -209,9 +209,9 @@ describe('ProjectObjectRepository Domain Interface', () => {
             const customRepo: ProjectObjectRepository<CustomProjectObject> = new MockProjectObjectRepository() as any;
             
             const customObject: CustomProjectObject = {
-                projectId: 'custom-project',
-                contentType: 'custom-doc',
-                contentId: 'custom-123',
+                tenantId: 'custom-project',
+                resourceType: 'custom-doc',
+                resourceId: 'custom-123',
                 version: 1,
                 customField: 'custom value',
                 metadata: {
@@ -232,7 +232,7 @@ describe('ProjectObjectRepository Domain Interface', () => {
                 logic: SearchLogicalOperator.AND,
                 conditions: [
                     {
-                        key: 'projectId', // Type-safe: must be keyof ProjectObject
+                        key: 'tenantId', // Type-safe: must be keyof ProjectObject
                         value: 'test',
                         operator: SearchConditionOperator.EQUALS
                     }
@@ -256,9 +256,9 @@ describe('ProjectObjectRepository Domain Interface', () => {
     describe('Error Handling', () => {
         it('should handle update of non-existent object', async () => {
             const testObject: ProjectObject = {
-                projectId: 'non-existent',
-                contentType: 'document',
-                contentId: 'doc-999',
+                tenantId: 'non-existent',
+                resourceType: 'document',
+                resourceId: 'doc-999',
                 version: 1,
                 title: 'Non-existent'
             };
@@ -270,16 +270,16 @@ describe('ProjectObjectRepository Domain Interface', () => {
     describe('Async Behavior', () => {
         it('should return promises for all methods', () => {
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
             const testKey: ProjectObjectKey = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 

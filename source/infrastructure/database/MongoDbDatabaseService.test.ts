@@ -49,9 +49,9 @@ describe('MongoDbDatabaseService', () => {
   let mockCollection: any;
   let mockFind: any;
   
-  const obj1: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c1', version: 1, name: 'Alpha' };
-  const obj2: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c2', version: 1, name: 'Beta' };
-  const obj3: ProjectObject = { projectId: 'p2', contentType: 'typeB', contentId: 'c3', version: 2, name: 'Gamma' };
+  const obj1: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c1', version: 1, name: 'Alpha' };
+  const obj2: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c2', version: 1, name: 'Beta' };
+  const obj3: ProjectObject = { tenantId: 'p2', resourceType: 'typeB', resourceId: 'c3', version: 2, name: 'Gamma' };
 
   beforeEach(() => {
     // Clear all mocks
@@ -130,7 +130,7 @@ describe('MongoDbDatabaseService', () => {
     it('should throw error when object not found', async () => {
       mockCollection.findOne.mockResolvedValue(null);
 
-      const nonExistentObj: ProjectObject = { projectId: 'p999', contentType: 'typeX', contentId: 'c999', version: 1, name: 'NonExistent' };
+      const nonExistentObj: ProjectObject = { tenantId: 'p999', resourceType: 'typeX', resourceId: 'c999', version: 1, name: 'NonExistent' };
       
       await expect(db.update(nonExistentObj)).rejects.toThrow('Object not found');
     });
@@ -166,8 +166,8 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
-          { key: 'contentType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'resourceType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
         ],
       };
       const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
@@ -177,8 +177,8 @@ describe('MongoDbDatabaseService', () => {
       expect(results).toEqual([obj1, obj2]);
       expect(mockCollection.find).toHaveBeenCalledWith({
         $and: [
-          { projectId: 'p1' },
-          { contentType: 'typeA' }
+          { tenantId: 'p1' },
+          { resourceType: 'typeA' }
         ]
       });
     });
@@ -196,8 +196,8 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.OR,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
-          { key: 'projectId', value: 'p2', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p2', operator: SearchConditionOperator.EQUALS },
         ],
       };
       const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
@@ -207,8 +207,8 @@ describe('MongoDbDatabaseService', () => {
       expect(results).toEqual([obj1, obj2, obj3]);
       expect(mockCollection.find).toHaveBeenCalledWith({
         $or: [
-          { projectId: 'p1' },
-          { projectId: 'p2' }
+          { tenantId: 'p1' },
+          { tenantId: 'p2' }
         ]
       });
     });
@@ -225,7 +225,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.OR,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
         ],
       };
       const pagination: PaginationOption<ProjectObject> = { 
@@ -253,7 +253,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
         ]
       };
       const pagination: PaginationOption<ProjectObject> = {}; // No page/limit specified
@@ -383,7 +383,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
         ],
       };
 
@@ -398,7 +398,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'nonexistent', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'nonexistent', operator: SearchConditionOperator.EQUALS },
         ],
       };
 
@@ -415,7 +415,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
         ],
       };
 
@@ -430,7 +430,7 @@ describe('MongoDbDatabaseService', () => {
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'projectId', value: 'nonexistent', operator: SearchConditionOperator.EQUALS },
+          { key: 'tenantId', value: 'nonexistent', operator: SearchConditionOperator.EQUALS },
         ],
       };
 
@@ -448,10 +448,10 @@ describe('MongoDbDatabaseService', () => {
       expect(instance1).toBe(instance2);
     });
 
-    it('should return project-specific instances for getInstanceByProjectId', () => {
-      const instance1 = MongoDbDatabaseService.getInstanceByProjectId('project1');
-      const instance2 = MongoDbDatabaseService.getInstanceByProjectId('project1');
-      const instance3 = MongoDbDatabaseService.getInstanceByProjectId('project2');
+    it('should return project-specific instances for getInstanceByTenantId', () => {
+      const instance1 = MongoDbDatabaseService.getInstanceByTenantId('project1');
+      const instance2 = MongoDbDatabaseService.getInstanceByTenantId('project1');
+      const instance3 = MongoDbDatabaseService.getInstanceByTenantId('project2');
 
       expect(instance1).toBe(instance2);
       expect(instance1).not.toBe(instance3);

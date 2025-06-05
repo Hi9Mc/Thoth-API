@@ -9,17 +9,17 @@ describe('ProjectObject Domain Entity', () => {
     describe('ProjectObject Interface', () => {
         it('should enforce required properties', () => {
             const projectObject: ProjectObject = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1,
                 title: 'Test Document',
                 content: 'This is test content'
             };
 
-            expect(projectObject.projectId).toBe('test-project-123');
-            expect(projectObject.contentType).toBe('document');
-            expect(projectObject.contentId).toBe('doc-456');
+            expect(projectObject.tenantId).toBe('test-project-123');
+            expect(projectObject.resourceType).toBe('document');
+            expect(projectObject.resourceId).toBe('doc-456');
             expect(projectObject.version).toBe(1);
             expect(projectObject.title).toBe('Test Document');
             expect(projectObject.content).toBe('This is test content');
@@ -27,9 +27,9 @@ describe('ProjectObject Domain Entity', () => {
 
         it('should allow additional properties through index signature', () => {
             const projectObject: ProjectObject = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1,
                 customField: 'custom value',
                 metadata: {
@@ -47,9 +47,9 @@ describe('ProjectObject Domain Entity', () => {
 
         it('should handle different data types in additional properties', () => {
             const projectObject: ProjectObject = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1,
                 isPublished: true,
                 viewCount: 100,
@@ -73,56 +73,56 @@ describe('ProjectObject Domain Entity', () => {
     describe('ProjectObjectKey Interface', () => {
         it('should only contain key properties', () => {
             const key: ProjectObjectKey = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1
             };
 
-            expect(key.projectId).toBe('test-project-123');
-            expect(key.contentType).toBe('document');
-            expect(key.contentId).toBe('doc-456');
+            expect(key.tenantId).toBe('test-project-123');
+            expect(key.resourceType).toBe('document');
+            expect(key.resourceId).toBe('doc-456');
             expect(key.version).toBe(1);
 
             // Ensure no additional properties
-            expect(Object.keys(key)).toEqual(['projectId', 'contentType', 'contentId', 'version']);
+            expect(Object.keys(key)).toEqual(['tenantId', 'resourceType', 'resourceId', 'version']);
         });
 
         it('should be extractable from ProjectObject', () => {
             const projectObject: ProjectObject = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1,
                 title: 'Test Document',
                 additionalData: 'extra'
             };
 
             const key: ProjectObjectKey = {
-                projectId: projectObject.projectId,
-                contentType: projectObject.contentType,
-                contentId: projectObject.contentId,
+                tenantId: projectObject.tenantId,
+                resourceType: projectObject.resourceType,
+                resourceId: projectObject.resourceId,
                 version: projectObject.version
             };
 
-            expect(key.projectId).toBe(projectObject.projectId);
-            expect(key.contentType).toBe(projectObject.contentType);
-            expect(key.contentId).toBe(projectObject.contentId);
+            expect(key.tenantId).toBe(projectObject.tenantId);
+            expect(key.resourceType).toBe(projectObject.resourceType);
+            expect(key.resourceId).toBe(projectObject.resourceId);
             expect(key.version).toBe(projectObject.version);
         });
 
         it('should work with different version numbers', () => {
             const key1: ProjectObjectKey = {
-                projectId: 'test-project',
-                contentType: 'document',
-                contentId: 'doc-123',
+                tenantId: 'test-project',
+                resourceType: 'document',
+                resourceId: 'doc-123',
                 version: 0
             };
 
             const key2: ProjectObjectKey = {
-                projectId: 'test-project',
-                contentType: 'document',
-                contentId: 'doc-123',
+                tenantId: 'test-project',
+                resourceType: 'document',
+                resourceId: 'doc-123',
                 version: 999
             };
 
@@ -134,23 +134,23 @@ describe('ProjectObject Domain Entity', () => {
     describe('Type Safety', () => {
         it('should enforce string types for IDs', () => {
             const projectObject: ProjectObject = {
-                projectId: '123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: '123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 1
             };
 
             // These should be strings
-            expect(typeof projectObject.projectId).toBe('string');
-            expect(typeof projectObject.contentType).toBe('string');
-            expect(typeof projectObject.contentId).toBe('string');
+            expect(typeof projectObject.tenantId).toBe('string');
+            expect(typeof projectObject.resourceType).toBe('string');
+            expect(typeof projectObject.resourceId).toBe('string');
         });
 
         it('should enforce number type for version', () => {
             const projectObject: ProjectObject = {
-                projectId: 'test-project-123',
-                contentType: 'document',
-                contentId: 'doc-456',
+                tenantId: 'test-project-123',
+                resourceType: 'document',
+                resourceId: 'doc-456',
                 version: 42
             };
 

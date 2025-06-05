@@ -8,9 +8,9 @@ import 'jest';
 
 describe('InMemoryDatabaseService', () => {
   let db: InMemoryDatabaseService<ProjectObject>;
-  const obj1: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c1', version: 1, name: 'Alpha' };
-  const obj2: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c2', version: 1, name: 'Beta' };
-  const obj3: ProjectObject = { projectId: 'p2', contentType: 'typeB', contentId: 'c3', version: 2, name: 'Gamma' };
+  const obj1: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c1', version: 1, name: 'Alpha' };
+  const obj2: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c2', version: 1, name: 'Beta' };
+  const obj3: ProjectObject = { tenantId: 'p2', resourceType: 'typeB', resourceId: 'c3', version: 2, name: 'Gamma' };
 
   beforeEach(async () => {
     db = new InMemoryDatabaseService<ProjectObject>();
@@ -42,8 +42,8 @@ describe('InMemoryDatabaseService', () => {
     const condition: SearchOption<ProjectObject> = {
       logic: SearchLogicalOperator.AND,
       conditions: [
-        { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
-        { key: 'contentType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
+        { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+        { key: 'resourceType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
       ],
     };
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
@@ -56,8 +56,8 @@ describe('InMemoryDatabaseService', () => {
     const condition: SearchOption<ProjectObject> = {
       logic: SearchLogicalOperator.OR,
       conditions: [
-        { key: 'contentId', value: 'c1', operator: SearchConditionOperator.EQUALS },
-        { key: 'contentId', value: 'c3', operator: SearchConditionOperator.EQUALS },
+        { key: 'resourceId', value: 'c1', operator: SearchConditionOperator.EQUALS },
+        { key: 'resourceId', value: 'c3', operator: SearchConditionOperator.EQUALS },
       ],
     };
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
@@ -70,7 +70,7 @@ describe('InMemoryDatabaseService', () => {
     const condition: SearchOption<ProjectObject> = {
       logic: SearchLogicalOperator.AND,
       conditions: [
-        { key: 'projectId', value: 'p2', operator: SearchConditionOperator.EQUALS },
+        { key: 'tenantId', value: 'p2', operator: SearchConditionOperator.EQUALS },
       ],
     };
     expect(await db.exists(condition)).toBe(true);
@@ -81,8 +81,8 @@ describe('InMemoryDatabaseService', () => {
     const condition: SearchOption<ProjectObject> = {
       logic: SearchLogicalOperator.OR,
       conditions: [
-        { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
-        { key: 'projectId', value: 'p2', operator: SearchConditionOperator.EQUALS },
+        { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+        { key: 'tenantId', value: 'p2', operator: SearchConditionOperator.EQUALS },
       ],
     };
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 2, sortBy: 'name', sortDirection: SortDirection.ASC };
@@ -100,11 +100,11 @@ describe('InMemoryDatabaseService', () => {
         {
           logic: SearchLogicalOperator.AND,
           conditions: [
-            { key: 'projectId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+            { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
             { key: 'name', value: 'Alpha', operator: SearchConditionOperator.EQUALS },
           ],
         },
-        { key: 'contentId', value: 'c3', operator: SearchConditionOperator.EQUALS },
+        { key: 'resourceId', value: 'c3', operator: SearchConditionOperator.EQUALS },
       ],
     };
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
@@ -116,9 +116,9 @@ describe('InMemoryDatabaseService', () => {
   // Performance test: Insert and search 10,000 records
   it('should perform search efficiently with 10,000 records', async () => {
     const manyObjs: ProjectObject[] = Array.from({ length: 10000 }, (_, i) => ({
-      projectId: 'pX',
-      contentType: 'typeP',
-      contentId: `c${i + 10}`,
+      tenantId: 'pX',
+      resourceType: 'typeP',
+      resourceId: `c${i + 10}`,
       version: 1,
       name: `Name${i}`,
     }));
@@ -129,7 +129,7 @@ describe('InMemoryDatabaseService', () => {
     const condition: SearchOption<ProjectObject> = {
       logic: SearchLogicalOperator.AND,
       conditions: [
-        { key: 'projectId', value: 'pX', operator: SearchConditionOperator.EQUALS },
+        { key: 'tenantId', value: 'pX', operator: SearchConditionOperator.EQUALS },
         { key: 'name', value: 'Name9999', operator: SearchConditionOperator.EQUALS },
       ],
     };
