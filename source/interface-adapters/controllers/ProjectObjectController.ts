@@ -33,9 +33,9 @@ export class ProjectObjectController<T extends ProjectObject = ProjectObject> {
         }
     }
 
-    async delete(projectId: string, contentType: string, contentId: string, version: number): Promise<{ success: boolean; error?: string }> {
+    async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<{ success: boolean; error?: string }> {
         try {
-            const key: ProjectObjectKey = { projectId, contentType, contentId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
             const result = await this.useCase.deleteObject(key);
             return { success: result };
         } catch (error) {
@@ -46,9 +46,9 @@ export class ProjectObjectController<T extends ProjectObject = ProjectObject> {
         }
     }
 
-    async getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<{ success: boolean; data?: T | null; error?: string }> {
+    async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<{ success: boolean; data?: T | null; error?: string }> {
         try {
-            const key: ProjectObjectKey = { projectId, contentType, contentId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
             const result = await this.useCase.getObject(key);
             return { success: true, data: result };
         } catch (error) {

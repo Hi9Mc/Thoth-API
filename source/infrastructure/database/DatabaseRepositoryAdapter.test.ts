@@ -19,14 +19,14 @@ class MockDatabaseService implements IDatabaseService<ProjectObject> {
         this.errorMessage = message;
     }
 
-    private createKey(projectId: string, contentType: string, contentId: string, version: number): string {
-        return `${projectId}:${contentType}:${contentId}:${version}`;
+    private createKey(tenantId: string, resourceType: string, resourceId: string, version: number): string {
+        return `${tenantId}:${resourceType}:${resourceId}:${version}`;
     }
 
     async create(obj: ProjectObject): Promise<ProjectObject> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
         this.storage.set(key, { ...obj });
         return obj;
     }
@@ -34,7 +34,7 @@ class MockDatabaseService implements IDatabaseService<ProjectObject> {
     async update(obj: ProjectObject): Promise<ProjectObject> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
         if (!this.storage.has(key)) {
             throw new Error('Object not found for update');
         }
@@ -42,17 +42,17 @@ class MockDatabaseService implements IDatabaseService<ProjectObject> {
         return obj;
     }
 
-    async delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean> {
+    async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(projectId, contentType, contentId, version);
+        const key = this.createKey(tenantId, resourceType, resourceId, version);
         return this.storage.delete(key);
     }
 
-    async getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<ProjectObject | null> {
+    async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<ProjectObject | null> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(projectId, contentType, contentId, version);
+        const key = this.createKey(tenantId, resourceType, resourceId, version);
         return this.storage.get(key) || null;
     }
 
@@ -109,9 +109,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
 
     describe('Create Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Test Document',
             content: 'This is test content'
@@ -135,9 +135,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
 
     describe('Update Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Updated Title'
         };
@@ -164,9 +164,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
 
     describe('Delete Operations', () => {
         const testKey: ProjectObjectKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -176,9 +176,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             const result = await adapter.delete(testKey);
 
             expect(deleteSpy).toHaveBeenCalledWith(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
             expect(typeof result).toBe('boolean');
@@ -209,9 +209,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
 
     describe('Find Operations', () => {
         const testKey: ProjectObjectKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -226,9 +226,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             await adapter.findByKey(testKey);
 
             expect(getByKeySpy).toHaveBeenCalledWith(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
         });
@@ -367,16 +367,16 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
     describe('Method Delegation Integrity', () => {
         it('should call database service methods exactly once for each adapter method', async () => {
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
             const testKey: ProjectObjectKey = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
@@ -423,9 +423,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             const customAdapter = new DatabaseRepositoryAdapter<CustomProjectObject>(customMockService);
 
             const customObject: CustomProjectObject = {
-                projectId: 'custom-project',
-                contentType: 'custom-doc',
-                contentId: 'custom-123',
+                tenantId: 'custom-project',
+                resourceType: 'custom-doc',
+                resourceId: 'custom-123',
                 version: 1,
                 customField: 'custom value'
             };
@@ -442,9 +442,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             jest.spyOn(mockDatabaseService, 'create').mockRejectedValueOnce(originalError);
 
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 

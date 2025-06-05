@@ -15,14 +15,14 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
         
         // Check if object already exists
         const existing = await this.repository.findByKey({
-            projectId: obj.projectId,
-            contentType: obj.contentType,
-            contentId: obj.contentId,
+            tenantId: obj.tenantId,
+            resourceType: obj.resourceType,
+            resourceId: obj.resourceId,
             version: obj.version
         });
 
         if (existing) {
-            throw new Error(`Object with key ${obj.projectId}#${obj.contentType}#${obj.contentId}#${obj.version} already exists`);
+            throw new Error(`Object with key ${obj.tenantId}#${obj.resourceType}#${obj.resourceId}#${obj.version} already exists`);
         }
 
         return this.repository.create(obj);
@@ -33,14 +33,14 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
         
         // Check if object exists
         const existing = await this.repository.findByKey({
-            projectId: obj.projectId,
-            contentType: obj.contentType,
-            contentId: obj.contentId,
+            tenantId: obj.tenantId,
+            resourceType: obj.resourceType,
+            resourceId: obj.resourceId,
             version: obj.version
         });
 
         if (!existing) {
-            throw new Error(`Object with key ${obj.projectId}#${obj.contentType}#${obj.contentId}#${obj.version} not found`);
+            throw new Error(`Object with key ${obj.tenantId}#${obj.resourceType}#${obj.resourceId}#${obj.version} not found`);
         }
 
         return this.repository.update(obj);
@@ -79,14 +79,14 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
     }
 
     private validateProjectObject(obj: T): void {
-        if (!obj.projectId || typeof obj.projectId !== 'string') {
-            throw new Error('ProjectId is required and must be a string');
+        if (!obj.tenantId || typeof obj.tenantId !== 'string') {
+            throw new Error('TenantId is required and must be a string');
         }
-        if (!obj.contentType || typeof obj.contentType !== 'string') {
-            throw new Error('ContentType is required and must be a string');
+        if (!obj.resourceType || typeof obj.resourceType !== 'string') {
+            throw new Error('ResourceType is required and must be a string');
         }
-        if (!obj.contentId || typeof obj.contentId !== 'string') {
-            throw new Error('ContentId is required and must be a string');
+        if (!obj.resourceId || typeof obj.resourceId !== 'string') {
+            throw new Error('ResourceId is required and must be a string');
         }
         if (typeof obj.version !== 'number' || obj.version < 0) {
             throw new Error('Version is required and must be a non-negative number');

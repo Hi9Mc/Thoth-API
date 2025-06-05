@@ -23,7 +23,7 @@ class MockRepository implements ProjectObjectRepository<ProjectObject> {
     }
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.projectId}:${key.contentType}:${key.contentId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
     }
 
     private checkFailure() {
@@ -123,17 +123,17 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Normal Operations (Circuit Closed)', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Test Document'
         };
 
         const testKey: ProjectObjectKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -208,9 +208,9 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Circuit Breaker State Transitions', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project',
-            contentType: 'document',
-            contentId: 'doc-123',
+            tenantId: 'test-project',
+            resourceType: 'document',
+            resourceId: 'doc-123',
             version: 1,
             title: 'Test'
         };
@@ -284,9 +284,9 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Circuit Breaker Metrics', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project',
-            contentType: 'document',
-            contentId: 'doc-123',
+            tenantId: 'test-project',
+            resourceType: 'document',
+            resourceId: 'doc-123',
             version: 1,
             title: 'Test'
         };
@@ -322,7 +322,7 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
         it('should track success count correctly', async () => {
             await wrapper.create(testObject);
-            await wrapper.create({ ...testObject, contentId: 'doc-124' });
+            await wrapper.create({ ...testObject, resourceId: 'doc-124' });
 
             const metrics = wrapper.getCircuitBreakerMetrics();
             expect(metrics.successCount).toBe(2);
@@ -358,9 +358,9 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Error Handling and Propagation', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project',
-            contentType: 'document',
-            contentId: 'doc-123',
+            tenantId: 'test-project',
+            resourceType: 'document',
+            resourceId: 'doc-123',
             version: 1,
             title: 'Test'
         };
@@ -400,9 +400,9 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Resilience and Recovery', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project',
-            contentType: 'document',
-            contentId: 'doc-123',
+            tenantId: 'test-project',
+            resourceType: 'document',
+            resourceId: 'doc-123',
             version: 1,
             title: 'Test'
         };
@@ -427,8 +427,8 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
             }
 
             // Third attempt should succeed (repository no longer fails)
-            const result = await wrapper.create({ ...testObject, contentId: 'doc-124' });
-            expect(result.contentId).toBe('doc-124');
+            const result = await wrapper.create({ ...testObject, resourceId: 'doc-124' });
+            expect(result.resourceId).toBe('doc-124');
 
             // Circuit should still be closed
             const metrics = wrapper.getCircuitBreakerMetrics();
@@ -451,9 +451,9 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
 
     describe('Concurrent Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project',
-            contentType: 'document',
-            contentId: 'doc-123',
+            tenantId: 'test-project',
+            resourceType: 'document',
+            resourceId: 'doc-123',
             version: 1,
             title: 'Test'
         };
@@ -464,7 +464,7 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
             for (let i = 0; i < 5; i++) {
                 promises.push(wrapper.create({
                     ...testObject,
-                    contentId: `doc-${i}`,
+                    resourceId: `doc-${i}`,
                     version: i
                 }));
             }
@@ -485,7 +485,7 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
                 promises.push(
                     wrapper.create({
                         ...testObject,
-                        contentId: `doc-${i}`,
+                        resourceId: `doc-${i}`,
                         version: i
                     }).catch(error => error)
                 );

@@ -30,7 +30,7 @@ class MockProjectObjectUseCase implements IProjectObjectUseCase<ProjectObject> {
     }
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.projectId}:${key.contentType}:${key.contentId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
     }
 
     async createObject(obj: ProjectObject): Promise<ProjectObject> {
@@ -109,9 +109,9 @@ describe('ProjectObjectController Interface Adapter', () => {
 
     describe('Create Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Test Document',
             content: 'This is test content'
@@ -149,9 +149,9 @@ describe('ProjectObjectController Interface Adapter', () => {
 
     describe('Update Operations', () => {
         const testObject: ProjectObject = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1,
             title: 'Updated Title'
         };
@@ -181,9 +181,9 @@ describe('ProjectObjectController Interface Adapter', () => {
 
     describe('Delete Operations', () => {
         const testKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -195,9 +195,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             });
 
             const result = await controller.delete(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
 
@@ -209,9 +209,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             mockUseCase.setError(true, 'Failed to delete object');
 
             const result = await controller.delete(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
 
@@ -225,9 +225,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             await controller.delete('proj-1', 'doc', 'content-1', 2);
 
             expect(deleteSpy).toHaveBeenCalledWith({
-                projectId: 'proj-1',
-                contentType: 'doc',
-                contentId: 'content-1',
+                tenantId: 'proj-1',
+                resourceType: 'doc',
+                resourceId: 'content-1',
                 version: 2
             });
         });
@@ -235,9 +235,9 @@ describe('ProjectObjectController Interface Adapter', () => {
 
     describe('Get Operations', () => {
         const testKey = {
-            projectId: 'test-project-123',
-            contentType: 'document',
-            contentId: 'doc-456',
+            tenantId: 'test-project-123',
+            resourceType: 'document',
+            resourceId: 'doc-456',
             version: 1
         };
 
@@ -250,9 +250,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             await mockUseCase.createObject(testObject);
 
             const result = await controller.getByKey(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
 
@@ -263,9 +263,9 @@ describe('ProjectObjectController Interface Adapter', () => {
 
         it('should return null when object does not exist', async () => {
             const result = await controller.getByKey(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
 
@@ -278,9 +278,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             mockUseCase.setError(true, 'Failed to get object');
 
             const result = await controller.getByKey(
-                testKey.projectId,
-                testKey.contentType,
-                testKey.contentId,
+                testKey.tenantId,
+                testKey.resourceType,
+                testKey.resourceId,
                 testKey.version
             );
 
@@ -406,9 +406,9 @@ describe('ProjectObjectController Interface Adapter', () => {
     describe('Response Format Consistency', () => {
         it('should maintain consistent response format across all operations', async () => {
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
@@ -446,9 +446,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             const customController = new ProjectObjectController<CustomProjectObject>(customUseCase as any);
 
             const customObject: CustomProjectObject = {
-                projectId: 'custom-project',
-                contentType: 'custom-doc',
-                contentId: 'custom-123',
+                tenantId: 'custom-project',
+                resourceType: 'custom-doc',
+                resourceId: 'custom-123',
                 version: 1,
                 customField: 'custom value'
             };
@@ -465,9 +465,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             jest.spyOn(mockUseCase, 'createObject').mockRejectedValueOnce(null);
 
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
@@ -481,9 +481,9 @@ describe('ProjectObjectController Interface Adapter', () => {
             jest.spyOn(mockUseCase, 'createObject').mockRejectedValueOnce(undefined);
 
             const testObject: ProjectObject = {
-                projectId: 'test',
-                contentType: 'doc',
-                contentId: 'test',
+                tenantId: 'test',
+                resourceType: 'doc',
+                resourceId: 'test',
                 version: 1
             };
 
