@@ -40,24 +40,24 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return this.instances.get(key) as MongoDbDatabaseService<T>;
   }
 
-  static getInstanceByProjectId<T extends ProjectObject = ProjectObject>(projectId: string): MongoDbDatabaseService<T> {
-    const key = `project_${projectId}`;
+  static getInstanceByTenantId<T extends ProjectObject = ProjectObject>(tenantId: string): MongoDbDatabaseService<T> {
+    const key = `tenant_${tenantId}`;
     if (!this.instances.has(key)) {
       this.instances.set(key, new MongoDbDatabaseService(
         'mongodb://localhost:27017',
         'thoth',
-        `objects_${projectId}`
+        `objects_${tenantId}`
       ));
     }
     return this.instances.get(key) as MongoDbDatabaseService<T>;
   }
 
-  private generateKey(projectId: string, contentType: string, contentId: string, version: number): string {
-    return `${projectId}#${contentType}#${contentId}#${version}`;
+  private generateKey(tenantId: string, resourceType: string, resourceId: string, version: number): string {
+    return `${tenantId}#${resourceType}#${resourceId}#${version}`;
   }
 
   async create(obj: T): Promise<T> {
-    const _id = this.generateKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     const document = {
       ...obj,
@@ -69,10 +69,10 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   }
 
   async update(obj: T): Promise<T> {
-    const _id = this.generateKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     // First check if the object exists
-    const existing = await this.getByKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     if (!existing) {
       throw new Error('Object not found');
     }
@@ -86,15 +86,15 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return obj;
   }
 
-  async delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean> {
-    const _id = this.generateKey(projectId, contentType, contentId, version);
+  async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
+    const _id = this.generateKey(tenantId, resourceType, resourceId, version);
     
     const result = await this.collection.deleteOne({ _id } as Filter<T>);
     return result.deletedCount > 0;
   }
 
-  async getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null> {
-    const _id = this.generateKey(projectId, contentType, contentId, version);
+  async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
+    const _id = this.generateKey(tenantId, resourceType, resourceId, version);
     
     const result = await this.collection.findOne({ _id } as Filter<T>);
     if (!result) {
