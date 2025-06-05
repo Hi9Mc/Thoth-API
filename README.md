@@ -1,17 +1,131 @@
-# Thoth Database Adapter Module
+# Thoth Database System - Clean Architecture Implementation
 
 ## คำอธิบายโปรเจกต์
 
-โมดูลนี้เป็นส่วนหนึ่งของระบบ Thoth สำหรับจัดการข้อมูลในรูปแบบต่าง ๆ ผ่าน interface กลาง (`IDatabaseService`) เพื่อให้สามารถเปลี่ยนแปลงหรือขยายฐานข้อมูลได้ง่าย โดยไม่ต้องแก้ไขโค้ดส่วนอื่น ๆ ของระบบ
+ระบบ Thoth ได้รับการปรับปรุงให้ใช้ Clean Architecture พร้อม Design Patterns: Adapter และ Circuit Breaker เพื่อเพิ่มความยืดหยุ่น ความน่าเชื่อถือ และการดูแลรักษาที่ดีขึ้น
 
-### โครงสร้างหลัก
-- `IDatabaseService.ts` : กำหนด interface และ type สำหรับการติดต่อกับฐานข้อมูล เช่น การสร้าง, อัปเดต, ลบ, ค้นหา, นับจำนวนข้อมูล ฯลฯ
-- `InMemoryDatabaseService.ts` : ตัวอย่าง implementation ของ `IDatabaseService` ที่เก็บข้อมูลไว้ในหน่วยความจำ (เหมาะสำหรับทดสอบหรือใช้งานเบื้องต้น)
-- `InMemoryDatabaseService.test.ts` : ไฟล์ unit test สำหรับทดสอบการทำงานของ `InMemoryDatabaseService`
-- `DynamoDbDatabaseService.ts` : implementation ของ `IDatabaseService` สำหรับ Amazon DynamoDB โดยใช้ AWS SDK v3
-- `DynamoDbDatabaseService.test.ts` : ไฟล์ unit test สำหรับทดสอบการทำงานของ `DynamoDbDatabaseService`
+### Clean Architecture Structure
 
-## วิธีการใช้งาน
+โครงสร้างใหม่ประกอบด้วย 4 ชั้นหลัก:
+
+#### 1. Domain Layer (`/domain/`)
+- **Entities**: `ProjectObject`, `SearchCriteria` - Core business objects
+- **Repositories**: `ProjectObjectRepository` - Repository interfaces (abstractions)
+- **Services**: Domain services for business logic
+
+#### 2. Application Layer (`/application/`)
+- **Use Cases**: `ProjectObjectUseCase` - Application-specific business rules
+- **Services**: Application services and orchestration
+
+#### 3. Infrastructure Layer (`/infrastructure/`)
+- **Database**: Database implementations and adapters
+- **Circuit Breaker**: Fault tolerance and resilience patterns
+- **External**: External service integrations
+
+#### 4. Interface Adapters Layer (`/interface-adapters/`)
+- **Controllers**: `ProjectObjectController` - API interface adapters
+- **Presenters**: Data presentation logic
+- **Gateways**: External service gateways
+
+### Design Patterns Implemented
+
+#### 1. Adapter Pattern
+- `DatabaseRepositoryAdapter`: Adapts legacy database services to domain repository interface
+- `RepositoryFactory`: Factory for creating repository instances with different adapters
+
+#### 2. Circuit Breaker Pattern  
+- `CircuitBreaker`: Implements fault tolerance with states (CLOSED, OPEN, HALF_OPEN)
+- `CircuitBreakerRepositoryWrapper`: Wraps repositories with circuit breaker functionality
+- Automatic failure detection and recovery mechanisms
+
+### Legacy Compatibility
+
+เก็บโครงสร้างเดิมไว้ใน `/modules/` สำหรับ backward compatibility:
+- `IDatabaseService.ts`: Legacy interface 
+- `InMemoryDatabaseService.ts`: In-memory implementation
+- `DynamoDbDatabaseService.ts`: DynamoDB implementation  
+- `MongoDbDatabaseService.ts`: MongoDB implementation
+
+## วิธีการใช้งาน Clean Architecture
+
+### 1. Basic Usage - In-Memory Database with Circuit Breaker
+
+```typescript
+import { 
+    RepositoryFactory, 
+    DatabaseType, 
+    ProjectObjectUseCase,
+    ProjectObjectController,
+    ProjectObject 
+} from './index';
+
+// Create repository with circuit breaker
+const repository = RepositoryFactory.createWithCircuitBreaker({
+    type: DatabaseType.IN_MEMORY
+}, {
+    failureThreshold: 5,
+    resetTimeout: 60000,  // 1 minute
+    monitoringPeriod: 10000  // 10 seconds
+});
+
+// Create use case and controller
+const useCase = new ProjectObjectUseCase(repository);
+const controller = new ProjectObjectController(useCase);
+
+// Use the controller
+const testObject: ProjectObject = {
+    projectId: 'demo-project',
+    contentType: 'document',
+    contentId: 'demo-doc-1',
+    version: 1,
+    title: 'Demo Document'
+};
+
+const result = await controller.create(testObject);
+```
+
+### 2. DynamoDB with Custom Circuit Breaker
+
+```typescript
+const repository = RepositoryFactory.createWithCircuitBreaker({
+    type: DatabaseType.DYNAMODB,
+    tableName: 'MyThothTable',
+    region: 'us-west-2'
+}, {
+    failureThreshold: 3,
+    resetTimeout: 30000,  // 30 seconds
+    monitoringPeriod: 5000   // 5 seconds
+});
+```
+
+### 3. MongoDB without Circuit Breaker
+
+```typescript
+const repository = RepositoryFactory.create({
+    type: DatabaseType.MONGODB,
+    connectionString: 'mongodb://localhost:27017',
+    databaseName: 'thoth_clean',
+    collectionName: 'objects'
+});
+```
+
+### 4. Circuit Breaker Monitoring
+
+```typescript
+// Access circuit breaker metrics
+if ('getCircuitBreakerMetrics' in repository) {
+    const metrics = repository.getCircuitBreakerMetrics();
+    console.log('Circuit Breaker State:', metrics.state);
+    console.log('Failure Count:', metrics.failureCount);
+    
+    // Reset if needed
+    if (metrics.failureCount > 0) {
+        repository.resetCircuitBreaker();
+    }
+}
+```
+
+## Legacy Database Services Usage (Backward Compatibility)
 
 ### 1. การใช้งาน In-Memory Database Service
 
