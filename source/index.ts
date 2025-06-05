@@ -20,4 +20,5 @@ export * from './infrastructure/database/MongoDbDatabaseService';
 
 // Interface Adapters Layer Exports
 export * from './interface-adapters/controllers/ProjectObjectController';
+export * from './interface-adapters/controllers/RestApiController';
 
