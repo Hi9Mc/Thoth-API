@@ -1,10 +1,45 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swaggerDocument = __importStar(require("./swagger.json"));
 const RestApiController_1 = require("./interface-adapters/controllers/RestApiController");
 const ProjectObjectUseCase_1 = require("./application/use-cases/ProjectObjectUseCase");
 const RepositoryFactory_1 = require("./infrastructure/database/RepositoryFactory");
@@ -77,19 +112,26 @@ app.get('/health', (req, res) => {
         database: process.env.DATABASE_TYPE || 'IN_MEMORY'
     });
 });
-// Root endpoint
-app.get('/', (req, res) => {
+// API info endpoint
+app.get('/api', (req, res) => {
     res.json({
         message: 'Thoth Database System API',
         version: '1.0.0',
         endpoints: {
             'GET /health': 'Health check',
+            'GET /api': 'API information',
+            'GET /api-docs': 'API documentation (Swagger UI)',
             'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
             'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
             'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type'
         }
     });
 });
+// Swagger API documentation
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Thoth API Documentation'
+}));
 // Path-based endpoints: /tenants/{tenantId}/resources/{resourceType}/{resourceId}
 app.get('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req, res) => {
     try {
@@ -232,8 +274,10 @@ async function startServer() {
     await initializeController();
     app.listen(port, '0.0.0.0', () => {
         console.log(`Thoth API Server running on port ${port}`);
+        console.log(`UI: http://localhost:${port}/`);
+        console.log(`API info: http://localhost:${port}/api`);
         console.log(`Health check: http://localhost:${port}/health`);
-        console.log(`API documentation: http://localhost:${port}/`);
+        console.log(`Swagger UI: http://localhost:${port}/api-docs`);
     });
 }
 // Handle graceful shutdown
