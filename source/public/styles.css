@@ -15,7 +15,6 @@ body {
 }
 
 .container {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
     width: 100%; /* Ensure full width utilization */
@@ -450,16 +449,40 @@ button {
 
 /* Enhanced Responsive Design */
 
+/* Ultra-wide screens (2560px and above) */
+@media (min-width: 2560px) {
+    .container {
+        padding: 60px 120px; /* More generous padding for ultra-wide screens */
+    }
+    
+    main {
+        grid-template-columns: 2fr 1fr; /* Adjust proportions for ultra-wide */
+        gap: 80px; /* Very large gap for ultra-wide screens */
+    }
+    
+    .form-section, .browse-section {
+        padding: 50px;
+    }
+    
+    .custom-field {
+        padding: 15px;
+    }
+    
+    .field-group input, .field-group select, .field-group textarea {
+        font-size: 16px; /* Slightly larger text for ultra-wide viewing */
+    }
+}
+
 /* Extra large screens (1440px and above) */
 @media (min-width: 1440px) {
     .container {
-        max-width: 1600px;
-        padding: 40px;
+        padding: 40px 60px; /* Increase horizontal padding for very wide screens */
     }
     
     main {
         grid-template-columns: 1.5fr 1fr;
-        gap: 40px;
+        gap: 60px; /* Larger gap for very wide screens */
+        max-width: none; /* Allow full width utilization */
     }
     
     .form-section, .browse-section {
@@ -470,13 +493,12 @@ button {
 /* Large screens (1200px to 1439px) */
 @media (min-width: 1200px) and (max-width: 1439px) {
     .container {
-        max-width: 1400px;
-        padding: 30px;
+        padding: 30px 40px; /* Increased horizontal padding */
     }
     
     main {
         grid-template-columns: 1.2fr 0.8fr;
-        gap: 30px;
+        gap: 40px; /* Increased gap */
     }
     
     .form-section, .browse-section {
@@ -487,13 +509,12 @@ button {
 /* Medium-large screens (1025px to 1199px) */
 @media (min-width: 1025px) and (max-width: 1199px) {
     .container {
-        max-width: 1200px;
-        padding: 25px;
+        padding: 25px 30px; /* Increased horizontal padding */
     }
     
     main {
         grid-template-columns: 1fr 1fr;
-        gap: 25px;
+        gap: 30px; /* Increased gap */
     }
     
     .form-section, .browse-section {
