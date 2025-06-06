@@ -33,9 +33,9 @@ class ProjectObjectController {
             };
         }
     }
-    async delete(tenantId, resourceType, resourceId, version) {
+    async delete(tenantId, resourceType, resourceId) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.deleteObject(key);
             return { success: result };
         }
@@ -46,9 +46,9 @@ class ProjectObjectController {
             };
         }
     }
-    async getByKey(tenantId, resourceType, resourceId, version) {
+    async getByKey(tenantId, resourceType, resourceId) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.getObject(key);
             return { success: true, data: result };
         }

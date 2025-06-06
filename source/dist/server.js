@@ -94,8 +94,7 @@ app.get('/', (req, res) => {
 app.get('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req, res) => {
     try {
         const { tenantId, resourceType, resourceId } = req.params;
-        const version = req.query.version ? parseInt(req.query.version) : 1;
-        const response = await restController.getResourceByPath(tenantId, resourceType, resourceId, version);
+        const response = await restController.getResourceByPath(tenantId, resourceType, resourceId);
         res.status(response.status).json(response.data || { error: response.error });
     }
     catch (error) {
@@ -125,8 +124,7 @@ app.put('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req, re
 app.delete('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req, res) => {
     try {
         const { tenantId, resourceType, resourceId } = req.params;
-        const version = req.query.version ? parseInt(req.query.version) : 1;
-        const response = await restController.deleteResourceByPath(tenantId, resourceType, resourceId, version);
+        const response = await restController.deleteResourceByPath(tenantId, resourceType, resourceId);
         res.status(response.status).json(response.error ? { error: response.error } : {});
     }
     catch (error) {
@@ -150,11 +148,10 @@ app.get('/resources/:resourceId', async (req, res) => {
         const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'];
         const resourceType = req.headers['x-resource-type'];
-        const version = req.query.version ? parseInt(req.query.version) : 1;
         if (!tenantId || !resourceType) {
             return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
         }
-        const response = await restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType, version);
+        const response = await restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType);
         res.status(response.status).json(response.data || { error: response.error });
     }
     catch (error) {
@@ -196,11 +193,10 @@ app.delete('/resources/:resourceId', async (req, res) => {
         const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'];
         const resourceType = req.headers['x-resource-type'];
-        const version = req.query.version ? parseInt(req.query.version) : 1;
         if (!tenantId || !resourceType) {
             return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
         }
-        const response = await restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType, version);
+        const response = await restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType);
         res.status(response.status).json(response.error ? { error: response.error } : {});
     }
     catch (error) {

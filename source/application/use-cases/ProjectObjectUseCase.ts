@@ -13,34 +13,44 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
         // Business logic: Validate object before creation
         this.validateProjectObject(obj);
         
-        // Check if object already exists
+        // Set version to 1 for new objects
+        const newObj = { ...obj, version: 1 } as T;
+        
+        // Check if object already exists (by key without version)
         const existing = await this.repository.findByKey({
-            tenantId: obj.tenantId,
-            resourceType: obj.resourceType,
-            resourceId: obj.resourceId,
-            version: obj.version
+            tenantId: newObj.tenantId,
+            resourceType: newObj.resourceType,
+            resourceId: newObj.resourceId
         });
 
         if (existing) {
-            throw new Error(`Object with key ${obj.tenantId}#${obj.resourceType}#${obj.resourceId}#${obj.version} already exists`);
+            throw new Error(`Object with key ${newObj.tenantId}#${newObj.resourceType}#${newObj.resourceId} already exists`);
         }
 
-        return this.repository.create(obj);
+        return this.repository.create(newObj);
+    }
+
+    async getObject(key: ProjectObjectKey): Promise<T | null> {
+        return this.repository.findByKey(key);
     }
 
     async updateObject(obj: T): Promise<T> {
         this.validateProjectObject(obj);
         
-        // Check if object exists
+        // Check if object exists (get current version)
         const existing = await this.repository.findByKey({
             tenantId: obj.tenantId,
             resourceType: obj.resourceType,
-            resourceId: obj.resourceId,
-            version: obj.version
+            resourceId: obj.resourceId
         });
 
         if (!existing) {
-            throw new Error(`Object with key ${obj.tenantId}#${obj.resourceType}#${obj.resourceId}#${obj.version} not found`);
+            throw new Error(`Object with key ${obj.tenantId}#${obj.resourceType}#${obj.resourceId} not found`);
+        }
+
+        // Validate version for optimistic locking
+        if (obj.version !== existing.version + 1) {
+            throw new Error(`Version mismatch. Expected ${existing.version + 1}, got ${obj.version}`);
         }
 
         return this.repository.update(obj);
@@ -53,10 +63,6 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
         }
         
         return this.repository.delete(key);
-    }
-
-    async getObject(key: ProjectObjectKey): Promise<T | null> {
-        return this.repository.findByKey(key);
     }
 
     async searchObjects(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[], total: number }> {

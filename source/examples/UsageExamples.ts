@@ -86,7 +86,7 @@ export async function demonstrateUsage() {
     console.log('Create result:', createResult);
 
     // Get by key
-    const getResult = await controller.getByKey('demo-project', 'document', 'demo-doc-1', 1);
+    const getResult = await controller.getByKey('demo-project', 'document', 'demo-doc-1');
     console.log('Get result:', getResult);
 
     // Search
@@ -104,7 +104,7 @@ export async function demonstrateUsage() {
     console.log('Update result:', updateResult);
 
     // Delete
-    const deleteResult = await controller.delete('demo-project', 'document', 'demo-doc-1', 1);
+    const deleteResult = await controller.delete('demo-project', 'document', 'demo-doc-1');
     console.log('Delete result:', deleteResult);
 }
 

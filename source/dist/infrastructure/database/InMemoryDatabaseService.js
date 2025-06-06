@@ -47,25 +47,39 @@ class InMemoryDatabaseService {
         this.data = [];
     }
     create(obj) {
-        this.data.push(obj);
-        return Promise.resolve(obj);
+        // Check if object already exists (by key without version)
+        const existing = this.data.find(o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId);
+        if (existing) {
+            throw new Error('Object already exists');
+        }
+        // Ensure version is 1 for new objects
+        const newObj = { ...obj, version: 1 };
+        this.data.push(newObj);
+        return Promise.resolve(newObj);
     }
     update(obj) {
-        const idx = this.data.findIndex(o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId && o.version === obj.version);
-        if (idx === -1)
+        const existingIndex = this.data.findIndex(o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId);
+        if (existingIndex === -1) {
             throw new Error('Object not found');
-        this.data[idx] = obj;
+        }
+        const existing = this.data[existingIndex];
+        // Optimistic locking: check version
+        if (obj.version !== existing.version + 1) {
+            throw new Error(`Version mismatch. Expected ${existing.version + 1}, got ${obj.version}`);
+        }
+        // Update the object with incremented version
+        this.data[existingIndex] = obj;
         return Promise.resolve(obj);
     }
-    delete(tenantId, resourceType, resourceId, version) {
-        const idx = this.data.findIndex(o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version);
+    delete(tenantId, resourceType, resourceId) {
+        const idx = this.data.findIndex(o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId);
         if (idx === -1)
             return Promise.resolve(false);
         this.data.splice(idx, 1);
         return Promise.resolve(true);
     }
-    getByKey(tenantId, resourceType, resourceId, version) {
-        const obj = this.data.find(o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version);
+    getByKey(tenantId, resourceType, resourceId) {
+        const obj = this.data.find(o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId);
         return Promise.resolve(obj !== null && obj !== void 0 ? obj : null);
     }
     search(condition, pagination) {

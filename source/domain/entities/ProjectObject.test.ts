@@ -75,17 +75,15 @@ describe('ProjectObject Domain Entity', () => {
             const key: ProjectObjectKey = {
                 tenantId: 'test-project-123',
                 resourceType: 'document',
-                resourceId: 'doc-456',
-                version: 1
+                resourceId: 'doc-456'
             };
 
             expect(key.tenantId).toBe('test-project-123');
             expect(key.resourceType).toBe('document');
             expect(key.resourceId).toBe('doc-456');
-            expect(key.version).toBe(1);
 
-            // Ensure no additional properties
-            expect(Object.keys(key)).toEqual(['tenantId', 'resourceType', 'resourceId', 'version']);
+            // Ensure no additional properties (version is not part of key anymore)
+            expect(Object.keys(key)).toEqual(['tenantId', 'resourceType', 'resourceId']);
         });
 
         it('should be extractable from ProjectObject', () => {
@@ -101,33 +99,29 @@ describe('ProjectObject Domain Entity', () => {
             const key: ProjectObjectKey = {
                 tenantId: projectObject.tenantId,
                 resourceType: projectObject.resourceType,
-                resourceId: projectObject.resourceId,
-                version: projectObject.version
+                resourceId: projectObject.resourceId
             };
 
             expect(key.tenantId).toBe(projectObject.tenantId);
             expect(key.resourceType).toBe(projectObject.resourceType);
             expect(key.resourceId).toBe(projectObject.resourceId);
-            expect(key.version).toBe(projectObject.version);
         });
 
-        it('should work with different version numbers', () => {
+        it('should work with different resource IDs', () => {
             const key1: ProjectObjectKey = {
                 tenantId: 'test-project',
                 resourceType: 'document',
-                resourceId: 'doc-123',
-                version: 0
+                resourceId: 'doc-123'
             };
 
             const key2: ProjectObjectKey = {
                 tenantId: 'test-project',
                 resourceType: 'document',
-                resourceId: 'doc-123',
-                version: 999
+                resourceId: 'doc-456'
             };
 
-            expect(key1.version).toBe(0);
-            expect(key2.version).toBe(999);
+            expect(key1.resourceId).toBe('doc-123');
+            expect(key2.resourceId).toBe('doc-456');
         });
     });
 

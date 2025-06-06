@@ -20,11 +20,11 @@ export class DatabaseRepositoryAdapter<T extends ProjectObject = ProjectObject> 
     }
 
     async delete(key: ProjectObjectKey): Promise<boolean> {
-        return this.databaseService.delete(key.tenantId, key.resourceType, key.resourceId, key.version);
+        return this.databaseService.delete(key.tenantId, key.resourceType, key.resourceId);
     }
 
     async findByKey(key: ProjectObjectKey): Promise<T | null> {
-        return this.databaseService.getByKey(key.tenantId, key.resourceType, key.resourceId, key.version);
+        return this.databaseService.getByKey(key.tenantId, key.resourceType, key.resourceId);
     }
 
     async search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[], total: number }> {

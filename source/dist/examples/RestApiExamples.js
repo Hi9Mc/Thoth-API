@@ -31,13 +31,13 @@ class HttpRouter {
                 const version = (query === null || query === void 0 ? void 0 : query.version) ? parseInt(query.version) : 1;
                 switch (method) {
                     case 'GET':
-                        return this.toHttpResponse(await this.restController.getResourceByPath(tenantId, resourceType, resourceId, version));
+                        return this.toHttpResponse(await this.restController.getResourceByPath(tenantId, resourceType, resourceId));
                     case 'POST':
                         return this.toHttpResponse(await this.restController.createResourceByPath(tenantId, resourceType, resourceId, body));
                     case 'PUT':
                         return this.toHttpResponse(await this.restController.updateResourceByPath(tenantId, resourceType, resourceId, body));
                     case 'DELETE':
-                        return this.toHttpResponse(await this.restController.deleteResourceByPath(tenantId, resourceType, resourceId, version));
+                        return this.toHttpResponse(await this.restController.deleteResourceByPath(tenantId, resourceType, resourceId));
                 }
             }
             // Header-based endpoints: /resources/{resourceId}
@@ -54,13 +54,13 @@ class HttpRouter {
                 }
                 switch (method) {
                     case 'GET':
-                        return this.toHttpResponse(await this.restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType, version));
+                        return this.toHttpResponse(await this.restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType));
                     case 'POST':
                         return this.toHttpResponse(await this.restController.createResourceByIdWithHeaders(resourceId, tenantId, resourceType, body));
                     case 'PUT':
                         return this.toHttpResponse(await this.restController.updateResourceByIdWithHeaders(resourceId, tenantId, resourceType, body));
                     case 'DELETE':
-                        return this.toHttpResponse(await this.restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType, version));
+                        return this.toHttpResponse(await this.restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType));
                 }
             }
             // Search endpoint: /tenants/{tenantId}/resources/{resourceType}
