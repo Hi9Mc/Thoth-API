@@ -1,0 +1,50 @@
+services:
+  # MongoDB service for MongoDB database testing
+  mongodb:
+    image: mongo:7.0
+    container_name: thoth-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: thoth
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongodb.js:/docker-entrypoint-initdb.d/init-mongodb.js:ro
+    networks:
+      - thoth-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DynamoDB Local service for DynamoDB testing
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: thoth-dynamodb-local
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/home/dynamodblocal/data"]
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    networks:
+      - thoth-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongodb_data:
+    driver: local
+  dynamodb_data:
+    driver: local
+
+networks:
+  thoth-network:
+    driver: bridge

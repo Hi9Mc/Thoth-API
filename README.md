@@ -221,6 +221,27 @@ if ('getCircuitBreakerMetrics' in repository) {
 
 ผลลัพธ์จะแสดงสถานะการทดสอบทั้งหมดในคอนโซล
 
+## Docker Compose สำหรับ Testing Environment
+
+สำหรับการทดสอบในเครื่องทดสอบ ระบบมี Docker Compose ที่ตั้งค่าไว้แล้ว ซึ่งประกอบด้วย:
+- **MongoDB**: สำหรับทดสอบ MongoDB database service
+- **DynamoDB Local**: สำหรับทดสอบ DynamoDB database service
+
+### การใช้งาน Docker Compose
+
+```sh
+# เริ่มต้น services
+docker compose up -d
+
+# ตรวจสอบสถานะ
+docker compose ps
+
+# หยุด services  
+docker compose down
+```
+
+รายละเอียดเพิ่มเติมดูได้ในไฟล์ [DOCKER_README.md](DOCKER_README.md)
+
 ---
 
 **หมายเหตุ:**
