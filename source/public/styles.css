@@ -322,7 +322,7 @@ button {
 /* Enhanced Text and JSON Editors */
 .text-editor, .json-editor {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
-    resize: vertical;
+    resize: both;
     border: 2px solid #e9ecef;
     border-radius: 6px;
     padding: 12px;
