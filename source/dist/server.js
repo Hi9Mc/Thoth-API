@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const path_1 = __importDefault(require("path"));
 const RestApiController_1 = require("./interface-adapters/controllers/RestApiController");
 const ProjectObjectUseCase_1 = require("./application/use-cases/ProjectObjectUseCase");
 const RepositoryFactory_1 = require("./infrastructure/database/RepositoryFactory");
@@ -12,6 +13,8 @@ const port = parseInt(process.env.PORT || '3000', 10);
 // Middleware
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
+// Serve static files from public directory
+app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
 // CORS middleware for development
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -125,6 +128,17 @@ app.delete('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req,
         const version = req.query.version ? parseInt(req.query.version) : 1;
         const response = await restController.deleteResourceByPath(tenantId, resourceType, resourceId, version);
         res.status(response.status).json(response.error ? { error: response.error } : {});
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// Search endpoint: /tenants/{tenantId}/resources/{resourceType}
+app.get('/tenants/:tenantId/resources/:resourceType', async (req, res) => {
+    try {
+        const { tenantId, resourceType } = req.params;
+        const response = await restController.searchResourcesByPath(tenantId, resourceType, req.query);
+        res.status(response.status).json(response.data || { error: response.error });
     }
     catch (error) {
         res.status(500).json({ error: 'Internal server error' });
