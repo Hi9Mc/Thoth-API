@@ -10,10 +10,15 @@ class ProjectObjectUseCase {
         this.repository = repository;
     }
     async createObject(obj) {
-        // Business logic: Validate object before creation
-        this.validateProjectObject(obj);
-        // Set version to 1 for new objects
+        // For create operations, validate if version is provided, otherwise set to 1
+        if (obj.version !== undefined && obj.version !== null) {
+            // If version is explicitly provided, validate it
+            this.validateProjectObject(obj);
+        }
+        // Set version to 1 for new objects (create operations always start at version 1)
         const newObj = { ...obj, version: 1 };
+        // Validate the complete object
+        this.validateProjectObject(newObj);
         // Check if object already exists (by key without version)
         const existing = await this.repository.findByKey({
             tenantId: newObj.tenantId,
