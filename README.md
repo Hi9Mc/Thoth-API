@@ -221,6 +221,42 @@ if ('getCircuitBreakerMetrics' in repository) {
 
 ผลลัพธ์จะแสดงสถานะการทดสอบทั้งหมดในคอนโซล
 
+## Docker Compose สำหรับ Testing Environment
+
+สำหรับการทดสอบในเครื่องทดสอบ ระบบมี Docker Compose ที่ตั้งค่าไว้แล้ว ซึ่งประกอบด้วย:
+- **Thoth App**: Express.js API server พร้อมเชื่อมต่อฐานข้อมูล
+- **MongoDB**: สำหรับทดสอบ MongoDB database service
+- **DynamoDB Local**: สำหรับทดสอบ DynamoDB database service
+
+### การใช้งาน Docker Compose
+
+```sh
+# เริ่มต้น services ทั้งหมด (รวม API server)
+docker compose up -d
+
+# ตรวจสอบสถานะ
+docker compose ps
+
+# ดู logs ของ API server
+docker compose logs app
+
+# ทดสอบ API
+curl http://localhost:3000/health
+curl http://localhost:3000/
+
+# หยุด services  
+docker compose down
+```
+
+### การเข้าถึง Services
+
+- **API Server**: http://localhost:3000
+- **Health Check**: http://localhost:3000/health  
+- **MongoDB**: localhost:27017 (root/password)
+- **DynamoDB Local**: http://localhost:8000
+
+รายละเอียดเพิ่มเติมดูได้ในไฟล์ [DOCKER_README.md](DOCKER_README.md)
+
 ---
 
 **หมายเหตุ:**
