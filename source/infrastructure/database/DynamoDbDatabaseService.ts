@@ -60,10 +60,10 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return this.instances.get(key) as DynamoDbDatabaseService<T>;
   }
 
-  private generateKey(tenantId: string, resourceType: string, resourceId: string, version: number): { pk: string; sk: string } {
+  private generateKey(tenantId: string, resourceType: string, resourceId: string): { pk: string; sk: string } {
     return {
       pk: tenantId,
-      sk: `${resourceType}#${resourceId}#${version}`
+      sk: `${resourceType}#${resourceId}`
     };
   }
 
@@ -73,10 +73,19 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
       await this.ensureTable();
     }
     
-    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId);
+    
+    // Check if item already exists
+    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId);
+    if (existing) {
+      throw new Error('Object already exists');
+    }
+    
+    // Set version to 1 for new objects
+    const newObj = { ...obj, version: 1 } as T;
     
     const item = {
-      ...obj,
+      ...newObj,
       pk,
       sk
     };
@@ -87,7 +96,7 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     });
 
     await this.docClient.send(command);
-    return obj;
+    return newObj;
   }
 
   async update(obj: T): Promise<T> {
@@ -96,12 +105,17 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
       await this.ensureTable();
     }
     
-    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId);
     
-    // First check if the item exists
-    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    // First check if the item exists and get current version
+    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId);
     if (!existing) {
       throw new Error('Object not found');
+    }
+
+    // Optimistic locking: check version
+    if (obj.version !== existing.version + 1) {
+      throw new Error(`Version mismatch. Expected ${existing.version + 1}, got ${obj.version}`);
     }
 
     const item = {
@@ -119,8 +133,8 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return obj;
   }
 
-  async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
-    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId, version);
+  async delete(tenantId: string, resourceType: string, resourceId: string): Promise<boolean> {
+    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId);
 
     const command = new DeleteCommand({
       TableName: this.tableName,
@@ -132,13 +146,13 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return !!result.Attributes;
   }
 
-  async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
+  async getByKey(tenantId: string, resourceType: string, resourceId: string): Promise<T | null> {
     // Only ensure table in non-test environments
     if (process.env.NODE_ENV !== 'test') {
       await this.ensureTable();
     }
     
-    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId, version);
+    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId);
 
     const command = new GetCommand({
       TableName: this.tableName,

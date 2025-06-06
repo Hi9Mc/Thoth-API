@@ -15,13 +15,13 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
      * GET /tenants/{tenantId}/resources/{resourceType}/{resourceId}
      * Get a specific resource by tenant, type, and ID
      */
-    async getResourceByPath(tenantId: string, resourceType: string, resourceId: string, version: number = 1): Promise<{ 
+    async getResourceByPath(tenantId: string, resourceType: string, resourceId: string): Promise<{ 
         status: number; 
         data?: T | null; 
         error?: string 
     }> {
         try {
-            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId };
             const result = await this.useCase.getObject(key);
             
             if (result === null) {
@@ -47,15 +47,12 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         error?: string 
     }> {
         try {
-            // Extract version from body, default to 1
-            const version = (body as any).version || 1;
-            
             const resourceObject: T = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
+                // Version will be set to 1 in the use case
             } as T;
 
             const result = await this.useCase.createObject(resourceObject);
@@ -78,15 +75,16 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         error?: string 
     }> {
         try {
-            // Extract version from body, default to 1
-            const version = (body as any).version || 1;
+            // Version is required in body for optimistic locking
+            if (!(body as any).version) {
+                return { status: 400, error: 'Version is required for updates' };
+            }
             
             const resourceObject: T = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
             } as T;
 
             const result = await this.useCase.updateObject(resourceObject);
@@ -94,6 +92,9 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         } catch (error) {
             if (error instanceof Error && error.message.includes('not found')) {
                 return { status: 404, error: error.message };
+            }
+            if (error instanceof Error && error.message.includes('Version mismatch')) {
+                return { status: 409, error: error.message };
             }
             return { 
                 status: 400, 
@@ -106,12 +107,12 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
      * DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}
      * Delete a resource
      */
-    async deleteResourceByPath(tenantId: string, resourceType: string, resourceId: string, version: number = 1): Promise<{ 
+    async deleteResourceByPath(tenantId: string, resourceType: string, resourceId: string): Promise<{ 
         status: number; 
         error?: string 
     }> {
         try {
-            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId };
             const result = await this.useCase.deleteObject(key);
             
             if (!result) {
@@ -131,13 +132,13 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
      * GET /resources/{resourceId}
      * Get resource by ID with tenant context in headers
      */
-    async getResourceByIdWithHeaders(resourceId: string, tenantId: string, resourceType: string, version: number = 1): Promise<{ 
+    async getResourceByIdWithHeaders(resourceId: string, tenantId: string, resourceType: string): Promise<{ 
         status: number; 
         data?: T | null; 
         error?: string 
     }> {
         try {
-            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId };
             const result = await this.useCase.getObject(key);
             
             if (result === null) {
@@ -163,15 +164,12 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         error?: string 
     }> {
         try {
-            // Extract version from body, default to 1
-            const version = (body as any).version || 1;
-            
             const resourceObject: T = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
+                // Version will be set to 1 in the use case
             } as T;
 
             const result = await this.useCase.createObject(resourceObject);
@@ -194,15 +192,16 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         error?: string 
     }> {
         try {
-            // Extract version from body, default to 1
-            const version = (body as any).version || 1;
+            // Version is required in body for optimistic locking
+            if (!(body as any).version) {
+                return { status: 400, error: 'Version is required for updates' };
+            }
             
             const resourceObject: T = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
             } as T;
 
             const result = await this.useCase.updateObject(resourceObject);
@@ -210,6 +209,9 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
         } catch (error) {
             if (error instanceof Error && error.message.includes('not found')) {
                 return { status: 404, error: error.message };
+            }
+            if (error instanceof Error && error.message.includes('Version mismatch')) {
+                return { status: 409, error: error.message };
             }
             return { 
                 status: 400, 
@@ -222,12 +224,12 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
      * DELETE /resources/{resourceId}
      * Delete resource by ID with tenant context in headers
      */
-    async deleteResourceByIdWithHeaders(resourceId: string, tenantId: string, resourceType: string, version: number = 1): Promise<{ 
+    async deleteResourceByIdWithHeaders(resourceId: string, tenantId: string, resourceType: string): Promise<{ 
         status: number; 
         error?: string 
     }> {
         try {
-            const key: ProjectObjectKey = { tenantId, resourceType, resourceId, version };
+            const key: ProjectObjectKey = { tenantId, resourceType, resourceId };
             const result = await this.useCase.deleteObject(key);
             
             if (!result) {

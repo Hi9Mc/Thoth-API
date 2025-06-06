@@ -10,5 +10,4 @@ export interface ProjectObjectKey {
     tenantId: string;
     resourceType: string;
     resourceId: string;
-    version: number;
 }

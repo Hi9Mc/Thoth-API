@@ -57,31 +57,53 @@ export class InMemoryDatabaseService<T extends ProjectObject = ProjectObject> im
   private data: T[] = [];
 
   create(obj: T): Promise<T> {
-    this.data.push(obj);
-    return Promise.resolve(obj);
+    // Check if object already exists (by key without version)
+    const existing = this.data.find(
+      o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId
+    );
+    if (existing) {
+      throw new Error('Object already exists');
+    }
+    
+    // Ensure version is 1 for new objects
+    const newObj = { ...obj, version: 1 } as T;
+    this.data.push(newObj);
+    return Promise.resolve(newObj);
   }
 
   update(obj: T): Promise<T> {
-    const idx = this.data.findIndex(
-      o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId && o.version === obj.version
+    const existingIndex = this.data.findIndex(
+      o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId
     );
-    if (idx === -1) throw new Error('Object not found');
-    this.data[idx] = obj;
+    
+    if (existingIndex === -1) {
+      throw new Error('Object not found');
+    }
+    
+    const existing = this.data[existingIndex];
+    
+    // Optimistic locking: check version
+    if (obj.version !== existing.version + 1) {
+      throw new Error(`Version mismatch. Expected ${existing.version + 1}, got ${obj.version}`);
+    }
+    
+    // Update the object with incremented version
+    this.data[existingIndex] = obj;
     return Promise.resolve(obj);
   }
 
-  delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
+  delete(tenantId: string, resourceType: string, resourceId: string): Promise<boolean> {
     const idx = this.data.findIndex(
-      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version
+      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId
     );
     if (idx === -1) return Promise.resolve(false);
     this.data.splice(idx, 1);
     return Promise.resolve(true);
   }
 
-  getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
+  getByKey(tenantId: string, resourceType: string, resourceId: string): Promise<T | null> {
     const obj = this.data.find(
-      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version
+      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId
     );
     return Promise.resolve(obj ?? null);
   }

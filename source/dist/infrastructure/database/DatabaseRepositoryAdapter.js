@@ -17,10 +17,10 @@ class DatabaseRepositoryAdapter {
         return this.databaseService.update(obj);
     }
     async delete(key) {
-        return this.databaseService.delete(key.tenantId, key.resourceType, key.resourceId, key.version);
+        return this.databaseService.delete(key.tenantId, key.resourceType, key.resourceId);
     }
     async findByKey(key) {
-        return this.databaseService.getByKey(key.tenantId, key.resourceType, key.resourceId, key.version);
+        return this.databaseService.getByKey(key.tenantId, key.resourceType, key.resourceId);
     }
     async search(condition, pagination) {
         return this.databaseService.search(condition, pagination);

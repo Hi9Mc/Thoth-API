@@ -70,7 +70,7 @@ async function demonstrateUsage() {
     const createResult = await controller.create(testObject);
     console.log('Create result:', createResult);
     // Get by key
-    const getResult = await controller.getByKey('demo-project', 'document', 'demo-doc-1', 1);
+    const getResult = await controller.getByKey('demo-project', 'document', 'demo-doc-1');
     console.log('Get result:', getResult);
     // Search
     const searchResult = await controller.search({
@@ -85,7 +85,7 @@ async function demonstrateUsage() {
     const updateResult = await controller.update(updatedObject);
     console.log('Update result:', updateResult);
     // Delete
-    const deleteResult = await controller.delete('demo-project', 'document', 'demo-doc-1', 1);
+    const deleteResult = await controller.delete('demo-project', 'document', 'demo-doc-1');
     console.log('Delete result:', deleteResult);
 }
 // Example of accessing circuit breaker metrics

@@ -56,7 +56,7 @@ export class HttpRouter {
                 switch (method) {
                     case 'GET':
                         return this.toHttpResponse(
-                            await this.restController.getResourceByPath(tenantId, resourceType, resourceId, version)
+                            await this.restController.getResourceByPath(tenantId, resourceType, resourceId)
                         );
                     case 'POST':
                         return this.toHttpResponse(
@@ -68,7 +68,7 @@ export class HttpRouter {
                         );
                     case 'DELETE':
                         return this.toHttpResponse(
-                            await this.restController.deleteResourceByPath(tenantId, resourceType, resourceId, version)
+                            await this.restController.deleteResourceByPath(tenantId, resourceType, resourceId)
                         );
                 }
             }
@@ -90,7 +90,7 @@ export class HttpRouter {
                 switch (method) {
                     case 'GET':
                         return this.toHttpResponse(
-                            await this.restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType, version)
+                            await this.restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType)
                         );
                     case 'POST':
                         return this.toHttpResponse(
@@ -102,7 +102,7 @@ export class HttpRouter {
                         );
                     case 'DELETE':
                         return this.toHttpResponse(
-                            await this.restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType, version)
+                            await this.restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType)
                         );
                 }
             }

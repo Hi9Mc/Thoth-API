@@ -53,8 +53,8 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return this.instances.get(key) as MongoDbDatabaseService<T>;
   }
 
-  private generateKey(tenantId: string, resourceType: string, resourceId: string, version: number): string {
-    return `${tenantId}#${resourceType}#${resourceId}#${version}`;
+  private generateKey(tenantId: string, resourceType: string, resourceId: string): string {
+    return `${tenantId}#${resourceType}#${resourceId}`;
   }
 
   private getCollection(resourceType: string): Collection<T> {
@@ -67,26 +67,43 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
       await this.ensureConnection();
     }
     
-    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId);
     const collection = this.getCollection(obj.resourceType);
     
+    // Check if object already exists
+    const existing = await collection.findOne({ _id } as Filter<T>);
+    if (existing) {
+      throw new Error('Object already exists');
+    }
+    
+    // Set version to 1 for new objects
+    const newObj = { ...obj, version: 1 } as T;
+    
     const document = {
-      ...obj,
+      ...newObj,
       _id
     };
 
     await collection.insertOne(document as any);
-    return obj;
+    return newObj;
   }
 
   async update(obj: T): Promise<T> {
-    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId);
     const collection = this.getCollection(obj.resourceType);
     
-    // First check if the object exists
-    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    // First check if the object exists and get current version
+    const existing = await collection.findOne({ _id } as Filter<T>);
     if (!existing) {
       throw new Error('Object not found');
+    }
+
+    // Extract current version
+    const currentVersion = (existing as any).version;
+    
+    // Optimistic locking: check version
+    if (obj.version !== currentVersion + 1) {
+      throw new Error(`Version mismatch. Expected ${currentVersion + 1}, got ${obj.version}`);
     }
 
     const document = {
@@ -98,16 +115,16 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return obj;
   }
 
-  async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
-    const _id = this.generateKey(tenantId, resourceType, resourceId, version);
+  async delete(tenantId: string, resourceType: string, resourceId: string): Promise<boolean> {
+    const _id = this.generateKey(tenantId, resourceType, resourceId);
     const collection = this.getCollection(resourceType);
     
     const result = await collection.deleteOne({ _id } as Filter<T>);
     return result.deletedCount > 0;
   }
 
-  async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
-    const _id = this.generateKey(tenantId, resourceType, resourceId, version);
+  async getByKey(tenantId: string, resourceType: string, resourceId: string): Promise<T | null> {
+    const _id = this.generateKey(tenantId, resourceType, resourceId);
     const collection = this.getCollection(resourceType);
     
     const result = await collection.findOne({ _id } as Filter<T>);

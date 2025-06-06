@@ -10,7 +10,7 @@ describe('InMemoryDatabaseService', () => {
   let db: InMemoryDatabaseService<ProjectObject>;
   const obj1: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c1', version: 1, name: 'Alpha' };
   const obj2: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c2', version: 1, name: 'Beta' };
-  const obj3: ProjectObject = { tenantId: 'p2', resourceType: 'typeB', resourceId: 'c3', version: 2, name: 'Gamma' };
+  const obj3: ProjectObject = { tenantId: 'p2', resourceType: 'typeB', resourceId: 'c3', version: 1, name: 'Gamma' };
 
   beforeEach(async () => {
     db = new InMemoryDatabaseService<ProjectObject>();
@@ -20,22 +20,56 @@ describe('InMemoryDatabaseService', () => {
   });
 
   it('should create and getByKey', async () => {
-    const found = await db.getByKey('p1', 'typeA', 'c1', 1);
-    expect(found).toEqual(obj1);
+    const found = await db.getByKey('p1', 'typeA', 'c1');
+    expect(found).toEqual({ ...obj1, version: 1 }); // Version will be set to 1 by create
   });
 
   it('should update', async () => {
-    const updated = { ...obj1, name: 'AlphaX' };
+    const updated = { ...obj1, version: 2, name: 'AlphaX' }; // Version must be 2 for update
     await db.update(updated);
-    const found = await db.getByKey('p1', 'typeA', 'c1', 1);
+    const found = await db.getByKey('p1', 'typeA', 'c1');
     expect(found?.name).toBe('AlphaX');
+    expect(found?.version).toBe(2);
   });
 
   it('should delete', async () => {
-    const result = await db.delete('p1', 'typeA', 'c1', 1);
+    const result = await db.delete('p1', 'typeA', 'c1');
     expect(result).toBe(true);
-    const found = await db.getByKey('p1', 'typeA', 'c1', 1);
+    const found = await db.getByKey('p1', 'typeA', 'c1');
     expect(found).toBeNull();
+  });
+
+  it('should enforce version optimistic locking on create', async () => {
+    // Try to create duplicate - should fail because obj1 was already created in beforeEach
+    try {
+      await db.create(obj1);
+      fail('Expected create to throw error for duplicate object');
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('Object already exists');
+    }
+  });
+
+  it('should enforce version optimistic locking on update', async () => {
+    // Try to update with wrong version (too high)
+    const wrongVersion = { ...obj1, version: 3, name: 'WrongVersion' };
+    try {
+      await db.update(wrongVersion);
+      fail('Expected update to throw error for wrong version');
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('Version mismatch. Expected 2, got 3');
+    }
+
+    // Try to update with version 1 (should fail, needs 2)
+    const wrongVersion2 = { ...obj1, version: 1, name: 'WrongVersion2' };
+    try {
+      await db.update(wrongVersion2);
+      fail('Expected update to throw error for wrong version');
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('Version mismatch. Expected 2, got 1');
+    }
   });
 
   it('should search with AND condition', async () => {

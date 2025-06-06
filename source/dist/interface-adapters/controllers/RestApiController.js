@@ -15,9 +15,9 @@ class RestApiController {
      * GET /tenants/{tenantId}/resources/{resourceType}/{resourceId}
      * Get a specific resource by tenant, type, and ID
      */
-    async getResourceByPath(tenantId, resourceType, resourceId, version = 1) {
+    async getResourceByPath(tenantId, resourceType, resourceId) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.getObject(key);
             if (result === null) {
                 return { status: 404, error: 'Resource not found' };
@@ -37,14 +37,12 @@ class RestApiController {
      */
     async createResourceByPath(tenantId, resourceType, resourceId, body) {
         try {
-            // Extract version from body, default to 1
-            const version = body.version || 1;
             const resourceObject = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
+                // Version will be set to 1 in the use case
             };
             const result = await this.useCase.createObject(resourceObject);
             return { status: 201, data: result };
@@ -62,14 +60,15 @@ class RestApiController {
      */
     async updateResourceByPath(tenantId, resourceType, resourceId, body) {
         try {
-            // Extract version from body, default to 1
-            const version = body.version || 1;
+            // Version is required in body for optimistic locking
+            if (!body.version) {
+                return { status: 400, error: 'Version is required for updates' };
+            }
             const resourceObject = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
             };
             const result = await this.useCase.updateObject(resourceObject);
             return { status: 200, data: result };
@@ -77,6 +76,9 @@ class RestApiController {
         catch (error) {
             if (error instanceof Error && error.message.includes('not found')) {
                 return { status: 404, error: error.message };
+            }
+            if (error instanceof Error && error.message.includes('Version mismatch')) {
+                return { status: 409, error: error.message };
             }
             return {
                 status: 400,
@@ -88,9 +90,9 @@ class RestApiController {
      * DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}
      * Delete a resource
      */
-    async deleteResourceByPath(tenantId, resourceType, resourceId, version = 1) {
+    async deleteResourceByPath(tenantId, resourceType, resourceId) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.deleteObject(key);
             if (!result) {
                 return { status: 404, error: 'Resource not found' };
@@ -108,9 +110,9 @@ class RestApiController {
      * GET /resources/{resourceId}
      * Get resource by ID with tenant context in headers
      */
-    async getResourceByIdWithHeaders(resourceId, tenantId, resourceType, version = 1) {
+    async getResourceByIdWithHeaders(resourceId, tenantId, resourceType) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.getObject(key);
             if (result === null) {
                 return { status: 404, error: 'Resource not found' };
@@ -130,14 +132,12 @@ class RestApiController {
      */
     async createResourceByIdWithHeaders(resourceId, tenantId, resourceType, body) {
         try {
-            // Extract version from body, default to 1
-            const version = body.version || 1;
             const resourceObject = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
+                // Version will be set to 1 in the use case
             };
             const result = await this.useCase.createObject(resourceObject);
             return { status: 201, data: result };
@@ -155,14 +155,15 @@ class RestApiController {
      */
     async updateResourceByIdWithHeaders(resourceId, tenantId, resourceType, body) {
         try {
-            // Extract version from body, default to 1
-            const version = body.version || 1;
+            // Version is required in body for optimistic locking
+            if (!body.version) {
+                return { status: 400, error: 'Version is required for updates' };
+            }
             const resourceObject = {
                 ...body,
                 tenantId,
                 resourceType,
                 resourceId,
-                version
             };
             const result = await this.useCase.updateObject(resourceObject);
             return { status: 200, data: result };
@@ -170,6 +171,9 @@ class RestApiController {
         catch (error) {
             if (error instanceof Error && error.message.includes('not found')) {
                 return { status: 404, error: error.message };
+            }
+            if (error instanceof Error && error.message.includes('Version mismatch')) {
+                return { status: 409, error: error.message };
             }
             return {
                 status: 400,
@@ -181,9 +185,9 @@ class RestApiController {
      * DELETE /resources/{resourceId}
      * Delete resource by ID with tenant context in headers
      */
-    async deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType, version = 1) {
+    async deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType) {
         try {
-            const key = { tenantId, resourceType, resourceId, version };
+            const key = { tenantId, resourceType, resourceId };
             const result = await this.useCase.deleteObject(key);
             if (!result) {
                 return { status: 404, error: 'Resource not found' };

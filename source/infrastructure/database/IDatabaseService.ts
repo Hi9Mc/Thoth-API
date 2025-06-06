@@ -51,8 +51,8 @@ export interface PaginationOption<T = any> {
 export interface IDatabaseService<T extends { [key: string]: any } = ProjectObject> {
     create(obj: T): Promise<T>;
     update(obj: T): Promise<T>;
-    delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean>;
-    getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null>;
+    delete(tenantId: string, resourceType: string, resourceId: string): Promise<boolean>;
+    getByKey(tenantId: string, resourceType: string, resourceId: string): Promise<T | null>;
     search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[], total: number }>;
     exists(condition: SearchOption<T>): Promise<boolean>;
     count(condition: SearchOption<T>): Promise<number>;

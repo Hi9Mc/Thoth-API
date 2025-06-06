@@ -112,9 +112,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
 app.get('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req: Request, res: Response) => {
     try {
         const { tenantId, resourceType, resourceId } = req.params;
-        const version = req.query.version ? parseInt(req.query.version as string) : 1;
         
-        const response = await restController.getResourceByPath(tenantId, resourceType, resourceId, version);
+        const response = await restController.getResourceByPath(tenantId, resourceType, resourceId);
         res.status(response.status).json(response.data || { error: response.error });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -146,9 +145,8 @@ app.put('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req: Re
 app.delete('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req: Request, res: Response) => {
     try {
         const { tenantId, resourceType, resourceId } = req.params;
-        const version = req.query.version ? parseInt(req.query.version as string) : 1;
         
-        const response = await restController.deleteResourceByPath(tenantId, resourceType, resourceId, version);
+        const response = await restController.deleteResourceByPath(tenantId, resourceType, resourceId);
         res.status(response.status).json(response.error ? { error: response.error } : {});
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -173,13 +171,12 @@ app.get('/resources/:resourceId', async (req: Request, res: Response) => {
         const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
-        const version = req.query.version ? parseInt(req.query.version as string) : 1;
 
         if (!tenantId || !resourceType) {
             return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
         }
         
-        const response = await restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType, version);
+        const response = await restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType);
         res.status(response.status).json(response.data || { error: response.error });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -225,13 +222,12 @@ app.delete('/resources/:resourceId', async (req: Request, res: Response) => {
         const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
-        const version = req.query.version ? parseInt(req.query.version as string) : 1;
 
         if (!tenantId || !resourceType) {
             return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
         }
         
-        const response = await restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType, version);
+        const response = await restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType);
         res.status(response.status).json(response.error ? { error: response.error } : {});
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });

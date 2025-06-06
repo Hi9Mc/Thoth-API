@@ -19,40 +19,53 @@ class MockDatabaseService implements IDatabaseService<ProjectObject> {
         this.errorMessage = message;
     }
 
-    private createKey(tenantId: string, resourceType: string, resourceId: string, version: number): string {
-        return `${tenantId}:${resourceType}:${resourceId}:${version}`;
+    private createKey(tenantId: string, resourceType: string, resourceId: string): string {
+        return `${tenantId}:${resourceType}:${resourceId}`;
     }
 
     async create(obj: ProjectObject): Promise<ProjectObject> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
-        this.storage.set(key, { ...obj });
-        return obj;
+        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId);
+        if (this.storage.has(key)) {
+            throw new Error('Object already exists');
+        }
+        
+        // Set version to 1 for new objects
+        const newObj = { ...obj, version: 1 };
+        this.storage.set(key, { ...newObj });
+        return newObj;
     }
 
     async update(obj: ProjectObject): Promise<ProjectObject> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
-        if (!this.storage.has(key)) {
+        const key = this.createKey(obj.tenantId, obj.resourceType, obj.resourceId);
+        const existing = this.storage.get(key);
+        if (!existing) {
             throw new Error('Object not found for update');
         }
+        
+        // Optimistic locking: check version
+        if (obj.version !== existing.version + 1) {
+            throw new Error(`Version mismatch. Expected ${existing.version + 1}, got ${obj.version}`);
+        }
+        
         this.storage.set(key, { ...obj });
         return obj;
     }
 
-    async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
+    async delete(tenantId: string, resourceType: string, resourceId: string): Promise<boolean> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(tenantId, resourceType, resourceId, version);
+        const key = this.createKey(tenantId, resourceType, resourceId);
         return this.storage.delete(key);
     }
 
-    async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<ProjectObject | null> {
+    async getByKey(tenantId: string, resourceType: string, resourceId: string): Promise<ProjectObject | null> {
         if (this.shouldThrowError) throw new Error(this.errorMessage);
         
-        const key = this.createKey(tenantId, resourceType, resourceId, version);
+        const key = this.createKey(tenantId, resourceType, resourceId);
         return this.storage.get(key) || null;
     }
 
@@ -144,10 +157,10 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
 
         it('should delegate update to database service', async () => {
             // First create the object
-            await mockDatabaseService.create(testObject);
+            const created = await mockDatabaseService.create(testObject);
             
             const updateSpy = jest.spyOn(mockDatabaseService, 'update');
-            const updatedObject = { ...testObject, title: 'New Title' };
+            const updatedObject = { ...created, version: 2, title: 'New Title' }; // Version must be 2 for update
             
             const result = await adapter.update(updatedObject);
 
@@ -166,8 +179,7 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
         const testKey: ProjectObjectKey = {
             tenantId: 'test-project-123',
             resourceType: 'document',
-            resourceId: 'doc-456',
-            version: 1
+            resourceId: 'doc-456'
         };
 
         it('should convert ProjectObjectKey to individual parameters for database service', async () => {
@@ -178,8 +190,7 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             expect(deleteSpy).toHaveBeenCalledWith(
                 testKey.tenantId,
                 testKey.resourceType,
-                testKey.resourceId,
-                testKey.version
+                testKey.resourceId
             );
             expect(typeof result).toBe('boolean');
         });
@@ -188,6 +199,7 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             // First create the object
             await mockDatabaseService.create({
                 ...testKey,
+                version: 1, // Version will be set by create
                 title: 'Test'
             });
 
@@ -211,12 +223,12 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
         const testKey: ProjectObjectKey = {
             tenantId: 'test-project-123',
             resourceType: 'document',
-            resourceId: 'doc-456',
-            version: 1
+            resourceId: 'doc-456'
         };
 
         const testObject: ProjectObject = {
             ...testKey,
+            version: 1,
             title: 'Test Document'
         };
 
@@ -228,8 +240,7 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             expect(getByKeySpy).toHaveBeenCalledWith(
                 testKey.tenantId,
                 testKey.resourceType,
-                testKey.resourceId,
-                testKey.version
+                testKey.resourceId
             );
         });
 
@@ -376,8 +387,7 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             const testKey: ProjectObjectKey = {
                 tenantId: 'test',
                 resourceType: 'doc',
-                resourceId: 'test',
-                version: 1
+                resourceId: 'test'
             };
 
             const searchCondition: SearchOption<ProjectObject> = {
@@ -395,8 +405,9 @@ describe('DatabaseRepositoryAdapter Infrastructure', () => {
             const existsSpy = jest.spyOn(mockDatabaseService, 'exists');
             const countSpy = jest.spyOn(mockDatabaseService, 'count');
 
-            await adapter.create(testObject);
-            await adapter.update(testObject);
+            const created = await adapter.create(testObject);
+            const updatedObject = { ...created, version: 2, title: 'Updated' }; // Correct version for update
+            await adapter.update(updatedObject);
             await adapter.delete(testKey);
             await adapter.findByKey(testKey);
             await adapter.search(searchCondition, pagination);
