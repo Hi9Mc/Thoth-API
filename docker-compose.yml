@@ -64,10 +64,11 @@ services:
     networks:
       - thoth-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "http://localhost:8000"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 volumes:
   mongodb_data:
