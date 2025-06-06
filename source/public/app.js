@@ -75,23 +75,37 @@ function createFieldInput(fieldName, fieldData) {
     
     switch (fieldData.type) {
         case 'string':
-            inputElement = `<input type="text" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', this.value)">`;
+            // Enhanced text input with support for multiline
+            const isMultiline = fieldData.value && (fieldData.value.length > 100 || fieldData.value.includes('\n'));
+            if (isMultiline) {
+                inputElement = `<textarea id="${fieldId}" class="text-editor" rows="4" onchange="updateFieldValue('${fieldName}', this.value)" placeholder="Enter text here...">${fieldData.value}</textarea>`;
+            } else {
+                inputElement = `
+                    <input type="text" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', this.value)" placeholder="Enter text here...">
+                    <button type="button" class="json-editor-button" onclick="toggleTextEditor('${fieldId}', '${fieldName}')" title="Switch to multiline editor">📝</button>
+                `;
+            }
             break;
         case 'number':
-            inputElement = `<input type="number" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', parseFloat(this.value) || 0)">`;
+            inputElement = `<input type="number" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', parseFloat(this.value) || 0)" placeholder="Enter number..." step="any">`;
             break;
         case 'boolean':
             const checked = fieldData.value ? 'checked' : '';
-            inputElement = `<input type="checkbox" id="${fieldId}" ${checked} onchange="updateFieldValue('${fieldName}', this.checked)">`;
+            inputElement = `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="${fieldId}" ${checked} onchange="updateFieldValue('${fieldName}', this.checked)" style="width: auto;">
+                    <span>${fieldData.value ? 'True' : 'False'}</span>
+                </label>
+            `;
             break;
         case 'date':
             inputElement = `<input type="date" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', this.value)">`;
             break;
         case 'json':
-            inputElement = `<textarea id="${fieldId}" class="json-editor" onchange="updateFieldValue('${fieldName}', this.value)">${fieldData.value}</textarea>`;
+            inputElement = createJsonEditor(fieldId, fieldName, fieldData.value);
             break;
         case 'array':
-            inputElement = `<textarea id="${fieldId}" class="json-editor" onchange="updateFieldValue('${fieldName}', this.value)">${fieldData.value}</textarea>`;
+            inputElement = createJsonEditor(fieldId, fieldName, fieldData.value, true);
             break;
         default:
             inputElement = `<input type="text" id="${fieldId}" value="${fieldData.value}" onchange="updateFieldValue('${fieldName}', this.value)">`;
@@ -100,9 +114,60 @@ function createFieldInput(fieldName, fieldData) {
     return inputElement;
 }
 
+function createJsonEditor(fieldId, fieldName, value, isArray = false) {
+    const validationId = `${fieldId}_validation`;
+    return `
+        <div class="json-editor-container">
+            <div class="json-editor-toolbar">
+                <button type="button" class="json-editor-button" onclick="formatJson('${fieldId}', '${fieldName}')" title="Format JSON">Format</button>
+                <button type="button" class="json-editor-button" onclick="validateJson('${fieldId}')" title="Validate JSON">Validate</button>
+                <button type="button" class="json-editor-button" onclick="minifyJson('${fieldId}', '${fieldName}')" title="Minify JSON">Minify</button>
+                ${isArray ? '<span style="font-size: 11px; color: #666;">Array</span>' : '<span style="font-size: 11px; color: #666;">Object</span>'}
+            </div>
+            <textarea id="${fieldId}" class="json-editor" rows="6" onchange="updateFieldValue('${fieldName}', this.value)" oninput="validateJsonLive('${fieldId}')" placeholder="${isArray ? 'Enter JSON array here...' : 'Enter JSON object here...'}">${value}</textarea>
+            <div id="${validationId}" class="json-validation-message"></div>
+        </div>
+    `;
+}
+
+function toggleTextEditor(fieldId, fieldName) {
+    const input = document.getElementById(fieldId);
+    const currentValue = input.value;
+    
+    // Replace input with textarea
+    const textarea = document.createElement('textarea');
+    textarea.id = fieldId;
+    textarea.className = 'text-editor';
+    textarea.rows = 4;
+    textarea.value = currentValue;
+    textarea.onchange = () => updateFieldValue(fieldName, textarea.value);
+    textarea.placeholder = 'Enter text here...';
+    
+    // Replace the input element
+    const parent = input.parentNode;
+    const button = parent.querySelector('.json-editor-button');
+    parent.removeChild(input);
+    if (button) parent.removeChild(button);
+    parent.appendChild(textarea);
+    
+    // Focus the new textarea
+    textarea.focus();
+}
+
 function updateFieldValue(fieldName, value) {
     if (customFields[fieldName]) {
         customFields[fieldName].value = value;
+        
+        // Update boolean display text
+        if (customFields[fieldName].type === 'boolean') {
+            const fieldElements = document.querySelectorAll(`input[onchange*="${fieldName}"]`);
+            fieldElements.forEach(input => {
+                const span = input.parentNode.querySelector('span');
+                if (span) {
+                    span.textContent = value ? 'True' : 'False';
+                }
+            });
+        }
     }
 }
 
@@ -127,7 +192,7 @@ function renderCustomFields() {
         <div class="custom-field">
             <label>${fieldName}:</label>
             ${createFieldInput(fieldName, fieldData)}
-            <span class="field-type">${fieldData.type}</span>
+            <span class="field-type-indicator ${fieldData.type}">${fieldData.type}</span>
             <select onchange="changeFieldType('${fieldName}', this.value)">
                 <option value="string" ${fieldData.type === 'string' ? 'selected' : ''}>Text</option>
                 <option value="number" ${fieldData.type === 'number' ? 'selected' : ''}>Number</option>
@@ -139,6 +204,80 @@ function renderCustomFields() {
             <button class="remove-field" onclick="removeField('${fieldName}')">Remove</button>
         </div>
     `).join('');
+}
+
+// JSON Editor Helper Functions
+function formatJson(fieldId, fieldName) {
+    const textarea = document.getElementById(fieldId);
+    try {
+        const parsed = JSON.parse(textarea.value);
+        const formatted = JSON.stringify(parsed, null, 2);
+        textarea.value = formatted;
+        updateFieldValue(fieldName, formatted);
+        showJsonValidation(fieldId, 'JSON formatted successfully', 'success');
+    } catch (error) {
+        showJsonValidation(fieldId, `Invalid JSON: ${error.message}`, 'error');
+    }
+}
+
+function validateJson(fieldId) {
+    const textarea = document.getElementById(fieldId);
+    try {
+        JSON.parse(textarea.value);
+        showJsonValidation(fieldId, 'Valid JSON', 'success');
+    } catch (error) {
+        showJsonValidation(fieldId, `Invalid JSON: ${error.message}`, 'error');
+    }
+}
+
+function validateJsonLive(fieldId) {
+    const textarea = document.getElementById(fieldId);
+    const validationDiv = document.getElementById(`${fieldId}_validation`);
+    
+    if (!textarea.value.trim()) {
+        validationDiv.style.display = 'none';
+        return;
+    }
+    
+    try {
+        JSON.parse(textarea.value);
+        validationDiv.className = 'json-validation-message success';
+        validationDiv.textContent = '✓ Valid JSON';
+        validationDiv.style.display = 'block';
+    } catch (error) {
+        validationDiv.className = 'json-validation-message error';
+        validationDiv.textContent = `✗ ${error.message}`;
+        validationDiv.style.display = 'block';
+    }
+}
+
+function minifyJson(fieldId, fieldName) {
+    const textarea = document.getElementById(fieldId);
+    try {
+        const parsed = JSON.parse(textarea.value);
+        const minified = JSON.stringify(parsed);
+        textarea.value = minified;
+        updateFieldValue(fieldName, minified);
+        showJsonValidation(fieldId, 'JSON minified successfully', 'success');
+    } catch (error) {
+        showJsonValidation(fieldId, `Invalid JSON: ${error.message}`, 'error');
+    }
+}
+
+function showJsonValidation(fieldId, message, type) {
+    const validationDiv = document.getElementById(`${fieldId}_validation`);
+    if (validationDiv) {
+        validationDiv.className = `json-validation-message ${type}`;
+        validationDiv.textContent = message;
+        validationDiv.style.display = 'block';
+        
+        // Hide success messages after 3 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                validationDiv.style.display = 'none';
+            }, 3000);
+        }
+    }
 }
 
 // Object management functions
