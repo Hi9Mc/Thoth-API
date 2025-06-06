@@ -40,8 +40,7 @@ describe('ProjectObjectUseCase', () => {
             expect(mockRepository.findByKey).toHaveBeenCalledWith({
                 tenantId: testObject.tenantId,
                 resourceType: testObject.resourceType,
-                resourceId: testObject.resourceId,
-                version: testObject.version
+                resourceId: testObject.resourceId
             });
             expect(mockRepository.create).toHaveBeenCalledWith(testObject);
         });
@@ -50,7 +49,7 @@ describe('ProjectObjectUseCase', () => {
             mockRepository.findByKey.mockResolvedValue(testObject);
 
             await expect(useCase.createObject(testObject)).rejects.toThrow(
-                'Object with key test-project#test-type#test-id#1 already exists'
+                'Object with key test-project#test-type#test-id already exists'
             );
 
             expect(mockRepository.create).not.toHaveBeenCalled();
@@ -71,19 +70,20 @@ describe('ProjectObjectUseCase', () => {
     describe('updateObject', () => {
         it('should update object successfully when it exists', async () => {
             mockRepository.findByKey.mockResolvedValue(testObject);
-            mockRepository.update.mockResolvedValue(testObject);
+            const updatedObject = { ...testObject, version: 2 };
+            mockRepository.update.mockResolvedValue(updatedObject);
 
-            const result = await useCase.updateObject(testObject);
+            const result = await useCase.updateObject(updatedObject);
 
-            expect(result).toEqual(testObject);
-            expect(mockRepository.update).toHaveBeenCalledWith(testObject);
+            expect(result).toEqual(updatedObject);
+            expect(mockRepository.update).toHaveBeenCalledWith(updatedObject);
         });
 
         it('should throw error when object does not exist', async () => {
             mockRepository.findByKey.mockResolvedValue(null);
 
             await expect(useCase.updateObject(testObject)).rejects.toThrow(
-                'Object with key test-project#test-type#test-id#1 not found'
+                'Object with key test-project#test-type#test-id not found'
             );
 
             expect(mockRepository.update).not.toHaveBeenCalled();
@@ -94,8 +94,7 @@ describe('ProjectObjectUseCase', () => {
         const key: ProjectObjectKey = {
             tenantId: 'test-project',
             resourceType: 'test-type',
-            resourceId: 'test-id',
-            version: 1
+            resourceId: 'test-id'
         };
 
         it('should delete object successfully when it exists', async () => {
@@ -123,8 +122,7 @@ describe('ProjectObjectUseCase', () => {
             const key: ProjectObjectKey = {
                 tenantId: 'test-project',
                 resourceType: 'test-type',
-                resourceId: 'test-id',
-                version: 1
+                resourceId: 'test-id'
             };
 
             mockRepository.findByKey.mockResolvedValue(testObject);
@@ -139,8 +137,7 @@ describe('ProjectObjectUseCase', () => {
             const key: ProjectObjectKey = {
                 tenantId: 'test-project',
                 resourceType: 'test-type',
-                resourceId: 'test-id',
-                version: 1
+                resourceId: 'test-id'
             };
 
             mockRepository.findByKey.mockResolvedValue(null);

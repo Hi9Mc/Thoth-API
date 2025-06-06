@@ -79,14 +79,14 @@ describe('MongoDbDatabaseService', () => {
 
   describe('create', () => {
     it('should create an object successfully', async () => {
-      mockCollection.insertOne.mockResolvedValue({ insertedId: 'p1#typeA#c1#1' });
+      mockCollection.insertOne.mockResolvedValue({ insertedId: 'p1#typeA#c1' });
 
       const result = await db.create(obj1);
 
       expect(result).toEqual(obj1);
       expect(mockCollection.insertOne).toHaveBeenCalledWith({
         ...obj1,
-        _id: 'p1#typeA#c1#1'
+        _id: 'p1#typeA#c1'
       });
     });
 
@@ -100,19 +100,19 @@ describe('MongoDbDatabaseService', () => {
   describe('getByKey', () => {
     it('should retrieve an object by key', async () => {
       mockCollection.findOne.mockResolvedValue({
-        _id: 'p1#typeA#c1#1',
+        _id: 'p1#typeA#c1',
         ...obj1
       });
 
-      const found = await db.getByKey('p1', 'typeA', 'c1', 1);
+      const found = await db.getByKey('p1', 'typeA', 'c1');
       expect(found).toEqual(obj1);
-      expect(mockCollection.findOne).toHaveBeenCalledWith({ _id: 'p1#typeA#c1#1' });
+      expect(mockCollection.findOne).toHaveBeenCalledWith({ _id: 'p1#typeA#c1' });
     });
 
     it('should return null for non-existent object', async () => {
       mockCollection.findOne.mockResolvedValue(null);
 
-      const result = await db.getByKey('p999', 'typeX', 'c999', 1);
+      const result = await db.getByKey('p999', 'typeX', 'c999');
       expect(result).toBeNull();
     });
   });
@@ -121,19 +121,19 @@ describe('MongoDbDatabaseService', () => {
     it('should update an existing object', async () => {
       // Mock getByKey call (internal call)
       mockCollection.findOne.mockResolvedValue({
-        _id: 'p1#typeA#c1#1',
+        _id: 'p1#typeA#c1',
         ...obj1
       });
       
       mockCollection.replaceOne.mockResolvedValue({ modifiedCount: 1 });
 
-      const updatedObj = { ...obj1, name: 'AlphaX' };
+      const updatedObj = { ...obj1, name: 'AlphaX', version: 2 };
       const result = await db.update(updatedObj);
 
       expect(result).toEqual(updatedObj);
       expect(mockCollection.replaceOne).toHaveBeenCalledWith(
-        { _id: 'p1#typeA#c1#1' },
-        { ...updatedObj, _id: 'p1#typeA#c1#1' }
+        { _id: 'p1#typeA#c1' },
+        { ...updatedObj, _id: 'p1#typeA#c1' }
       );
     });
 
@@ -150,15 +150,15 @@ describe('MongoDbDatabaseService', () => {
     it('should delete an existing object', async () => {
       mockCollection.deleteOne.mockResolvedValue({ deletedCount: 1 });
 
-      const result = await db.delete('p1', 'typeA', 'c1', 1);
+      const result = await db.delete('p1', 'typeA', 'c1');
       expect(result).toBe(true);
-      expect(mockCollection.deleteOne).toHaveBeenCalledWith({ _id: 'p1#typeA#c1#1' });
+      expect(mockCollection.deleteOne).toHaveBeenCalledWith({ _id: 'p1#typeA#c1' });
     });
 
     it('should return false when deleting non-existent object', async () => {
       mockCollection.deleteOne.mockResolvedValue({ deletedCount: 0 });
 
-      const result = await db.delete('p999', 'typeX', 'c999', 1);
+      const result = await db.delete('p999', 'typeX', 'c999');
       expect(result).toBe(false);
     });
   });
@@ -166,8 +166,8 @@ describe('MongoDbDatabaseService', () => {
   describe('search', () => {
     it('should search with AND condition', async () => {
       const mockDocuments = [
-        { _id: 'p1#typeA#c1#1', ...obj1 },
-        { _id: 'p1#typeA#c2#1', ...obj2 }
+        { _id: 'p1#typeA#c1', ...obj1 },
+        { _id: 'p1#typeA#c2', ...obj2 }
       ];
       
       mockCollection.countDocuments.mockResolvedValue(2);
@@ -195,8 +195,8 @@ describe('MongoDbDatabaseService', () => {
 
     it('should search with OR condition', async () => {
       const mockDocuments = [
-        { _id: 'p1#typeA#c1#1', ...obj1 },
-        { _id: 'p1#typeA#c2#1', ...obj2 }
+        { _id: 'p1#typeA#c1', ...obj1 },
+        { _id: 'p1#typeA#c2', ...obj2 }
       ];
       
       mockCollection.countDocuments.mockResolvedValue(2);
@@ -235,8 +235,8 @@ describe('MongoDbDatabaseService', () => {
 
     it('should handle pagination and sorting', async () => {
       const sortedDocs = [
-        { _id: 'p1#typeA#c1#1', ...obj1 },
-        { _id: 'p1#typeA#c2#1', ...obj2 }
+        { _id: 'p1#typeA#c1', ...obj1 },
+        { _id: 'p1#typeA#c2', ...obj2 }
       ];
       
       mockCollection.countDocuments.mockResolvedValue(2);
@@ -267,8 +267,8 @@ describe('MongoDbDatabaseService', () => {
     it('should handle default pagination values', async () => {
       mockCollection.countDocuments.mockResolvedValue(2);
       mockFind.toArray.mockResolvedValue([
-        { _id: 'p1#typeA#c1#1', ...obj1 },
-        { _id: 'p1#typeA#c2#1', ...obj2 }
+        { _id: 'p1#typeA#c1', ...obj1 },
+        { _id: 'p1#typeA#c2', ...obj2 }
       ]);
 
       const condition: SearchOption<ProjectObject> = {
@@ -290,7 +290,7 @@ describe('MongoDbDatabaseService', () => {
     it('should handle NOT_EQUALS operator', async () => {
       mockCollection.countDocuments.mockResolvedValue(1);
       mockFind.toArray.mockResolvedValue([
-        { _id: 'p1#typeA#c2#1', ...obj2 }
+        { _id: 'p1#typeA#c2', ...obj2 }
       ]);
 
       const condition: SearchOption<ProjectObject> = {
@@ -315,7 +315,7 @@ describe('MongoDbDatabaseService', () => {
 
     it('should handle LIKE operator', async () => {
       mockCollection.countDocuments.mockResolvedValue(1);
-      mockFind.toArray.mockResolvedValue([{ _id: 'p1#typeA#c1#1', ...obj1 }]);
+      mockFind.toArray.mockResolvedValue([{ _id: 'p1#typeA#c1', ...obj1 }]);
 
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
@@ -352,8 +352,8 @@ describe('MongoDbDatabaseService', () => {
       
       // Mock find for each collection
       mockFind.toArray
-        .mockResolvedValueOnce([{ _id: 'p1#typeA#c1#1', ...obj1 }])
-        .mockResolvedValueOnce([{ _id: 'p2#typeB#c3#2', ...obj3 }]);
+        .mockResolvedValueOnce([{ _id: 'p1#typeA#c1', ...obj1 }])
+        .mockResolvedValueOnce([{ _id: 'p2#typeB#c3', ...obj3 }]);
 
       const condition: SearchOption<ProjectObject> = {
         logic: SearchLogicalOperator.AND,
@@ -384,11 +384,11 @@ describe('MongoDbDatabaseService', () => {
       // Mock find for each collection
       mockFind.toArray
         .mockResolvedValueOnce([
-          { _id: 'p1#typeA#c1#1', ...obj1 },
-          { _id: 'p1#typeA#c2#1', ...obj2 }
+          { _id: 'p1#typeA#c1', ...obj1 },
+          { _id: 'p1#typeA#c2', ...obj2 }
         ])
         .mockResolvedValueOnce([
-          { _id: 'p2#typeB#c3#2', ...obj3 }
+          { _id: 'p2#typeB#c3', ...obj3 }
         ]);
 
       const condition: SearchOption<ProjectObject> = {
@@ -420,11 +420,11 @@ describe('MongoDbDatabaseService', () => {
       // Mock find for each collection
       mockFind.toArray
         .mockResolvedValueOnce([
-          { _id: 'p1#typeA#c1#1', ...obj1 },
-          { _id: 'p1#typeA#c2#1', ...obj2 }
+          { _id: 'p1#typeA#c1', ...obj1 },
+          { _id: 'p1#typeA#c2', ...obj2 }
         ])
         .mockResolvedValueOnce([
-          { _id: 'p2#typeB#c3#2', ...obj3 }
+          { _id: 'p2#typeB#c3', ...obj3 }
         ]);
 
       const condition: SearchOption<ProjectObject> = {
@@ -455,8 +455,8 @@ describe('MongoDbDatabaseService', () => {
       // Mock find for each collection
       mockFind.toArray
         .mockResolvedValueOnce([
-          { _id: 'p1#typeA#c1#1', ...obj1 },
-          { _id: 'p1#typeA#c2#1', ...obj2 }
+          { _id: 'p1#typeA#c1', ...obj1 },
+          { _id: 'p1#typeA#c2', ...obj2 }
         ])
         .mockResolvedValueOnce([]);
 

@@ -30,7 +30,7 @@ class MockProjectObjectUseCase implements IProjectObjectUseCase<ProjectObject> {
     }
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}`;
     }
 
     async createObject(obj: ProjectObject): Promise<ProjectObject> {
@@ -198,7 +198,6 @@ describe('ProjectObjectController Interface Adapter', () => {
                 testKey.tenantId,
                 testKey.resourceType,
                 testKey.resourceId,
-                testKey.version
             );
 
             expect(result.success).toBe(true);
@@ -212,7 +211,6 @@ describe('ProjectObjectController Interface Adapter', () => {
                 testKey.tenantId,
                 testKey.resourceType,
                 testKey.resourceId,
-                testKey.version
             );
 
             expect(result.success).toBe(false);
@@ -222,13 +220,12 @@ describe('ProjectObjectController Interface Adapter', () => {
         it('should construct ProjectObjectKey correctly', async () => {
             const deleteSpy = jest.spyOn(mockUseCase, 'deleteObject');
 
-            await controller.delete('proj-1', 'doc', 'content-1', 2);
+            await controller.delete('proj-1', 'doc', 'content-1');
 
             expect(deleteSpy).toHaveBeenCalledWith({
                 tenantId: 'proj-1',
                 resourceType: 'doc',
-                resourceId: 'content-1',
-                version: 2
+                resourceId: 'content-1'
             });
         });
     });
@@ -253,7 +250,6 @@ describe('ProjectObjectController Interface Adapter', () => {
                 testKey.tenantId,
                 testKey.resourceType,
                 testKey.resourceId,
-                testKey.version
             );
 
             expect(result.success).toBe(true);
@@ -266,7 +262,6 @@ describe('ProjectObjectController Interface Adapter', () => {
                 testKey.tenantId,
                 testKey.resourceType,
                 testKey.resourceId,
-                testKey.version
             );
 
             expect(result.success).toBe(true);
@@ -281,7 +276,6 @@ describe('ProjectObjectController Interface Adapter', () => {
                 testKey.tenantId,
                 testKey.resourceType,
                 testKey.resourceId,
-                testKey.version
             );
 
             expect(result.success).toBe(false);
@@ -420,8 +414,8 @@ describe('ProjectObjectController Interface Adapter', () => {
             // Test all operations have success field
             const createResult = await controller.create(testObject);
             const updateResult = await controller.update(testObject);
-            const deleteResult = await controller.delete('test', 'doc', 'test', 1);
-            const getResult = await controller.getByKey('test', 'doc', 'test', 1);
+            const deleteResult = await controller.delete('test', 'doc', 'test');
+            const getResult = await controller.getByKey('test', 'doc', 'test');
             const searchResult = await controller.search(searchCondition);
             const existsResult = await controller.exists(searchCondition);
             const countResult = await controller.count(searchCondition);

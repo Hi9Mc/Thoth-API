@@ -97,7 +97,10 @@ describe('InMemoryDatabaseService', () => {
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
     const { results, total } = await db.search(condition, pagination);
     expect(total).toBe(2);
-    expect(results).toEqual(expect.arrayContaining([obj1, obj3]));
+    expect(results).toEqual(expect.arrayContaining([
+      { ...obj1, version: 1 }, 
+      { ...obj3, version: 1 }
+    ]));
   });
 
   it('should support exists and count', async () => {
@@ -144,7 +147,10 @@ describe('InMemoryDatabaseService', () => {
     const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
     const { results, total } = await db.search(condition, pagination);
     expect(total).toBe(2);
-    expect(results).toEqual(expect.arrayContaining([obj1, obj3]));
+    expect(results).toEqual(expect.arrayContaining([
+      { ...obj1, version: 1 }, 
+      { ...obj3, version: 1 }
+    ]));
   });
 
   // Performance test: Insert and search 10,000 records
