@@ -1,4 +1,34 @@
 services:
+  # Thoth API Application
+  app:
+    build: .
+    container_name: thoth-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_TYPE: MONGODB
+      MONGODB_URI: mongodb://root:password@mongodb:27017/thoth?authSource=admin
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_TABLE: thoth-objects
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: dummy
+      AWS_SECRET_ACCESS_KEY: dummy
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      dynamodb-local:
+        condition: service_healthy
+    networks:
+      - thoth-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # MongoDB service for MongoDB database testing
   mongodb:
     image: mongo:7.0

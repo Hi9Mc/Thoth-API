@@ -1,15 +1,16 @@
 # Docker Compose Setup for Testing
 
-This Docker Compose configuration provides local database services for testing the Thoth Database System.
+This Docker Compose configuration provides a complete testing environment for the Thoth Database System, including the application server and local database services.
 
 ## Services Included
 
+- **Thoth App**: Express.js API server with REST endpoints
 - **MongoDB**: Local MongoDB instance for testing MongoDB database service
 - **DynamoDB Local**: Local DynamoDB instance for testing DynamoDB database service
 
 ## Quick Start
 
-1. **Start the services:**
+1. **Start all services:**
    ```bash
    docker compose up -d
    ```
@@ -19,17 +20,40 @@ This Docker Compose configuration provides local database services for testing t
    docker compose ps
    ```
 
-3. **Stop the services:**
+3. **View application logs:**
+   ```bash
+   docker compose logs app
+   ```
+
+4. **Access the API:**
+   - API Server: http://localhost:3000
+   - Health Check: http://localhost:3000/health
+   - API Documentation: http://localhost:3000
+
+5. **Stop the services:**
    ```bash
    docker compose down
    ```
 
-4. **Stop and remove volumes (clean slate):**
+6. **Stop and remove volumes (clean slate):**
    ```bash
    docker compose down -v
    ```
 
 ## Service Details
+
+### Thoth Application
+- **Port**: 3000
+- **Health Check**: http://localhost:3000/health
+- **API Base URL**: http://localhost:3000
+- **Default Database**: MongoDB (configurable via DATABASE_TYPE env var)
+
+#### API Endpoints
+- `GET /health` - Health check
+- `GET /` - API documentation
+- `GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}` - Path-based operations
+- `GET|POST|PUT|DELETE /resources/{resourceId}` - Header-based operations (requires X-Tenant-Id and X-Resource-Type headers)
+- `GET /tenants/{tenantId}/resources/{resourceType}` - Search resources
 
 ### MongoDB
 - **Port**: 27017
@@ -42,11 +66,30 @@ This Docker Compose configuration provides local database services for testing t
 - **Port**: 8000
 - **Endpoint**: http://localhost:8000
 - **Region**: us-east-1
-- **Table**: ThothObjects (needs to be created manually or via application)
+- **Table**: thoth-objects
 
 ## Testing with Docker Services
 
-After starting the services, you can run tests that use the local database instances:
+### Option 1: Use the API Server
+After starting the services, you can interact with the API directly:
+
+```bash
+# Test health check
+curl http://localhost:3000/health
+
+# Create a resource
+curl -X POST http://localhost:3000/tenants/demo/resources/document/doc1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test Document", "content": "Hello World"}'
+
+# Get a resource
+curl http://localhost:3000/tenants/demo/resources/document/doc1
+
+# Search resources
+curl "http://localhost:3000/tenants/demo/resources/document?page=1&limit=10"
+```
+
+### Option 2: Run Tests Against Local Databases
 
 ```bash
 # Navigate to source directory
