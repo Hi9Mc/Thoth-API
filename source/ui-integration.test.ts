@@ -71,8 +71,7 @@ describe('UI Integration Test', () => {
             const result = await restController.getResourceByPath(
                 objectData.tenantId,
                 objectData.resourceType,
-                objectData.resourceId,
-                objectData.version
+                objectData.resourceId
             );
 
             expect(result.status).toBe(200);
@@ -177,8 +176,7 @@ describe('UI Integration Test', () => {
             const deleteResult = await restController.deleteResourceByPath(
                 objectData.tenantId,
                 objectData.resourceType,
-                objectData.resourceId,
-                objectData.version
+                objectData.resourceId
             );
 
             expect(deleteResult.status).toBe(204);
@@ -187,8 +185,7 @@ describe('UI Integration Test', () => {
             const getResult = await restController.getResourceByPath(
                 objectData.tenantId,
                 objectData.resourceType,
-                objectData.resourceId,
-                objectData.version
+                objectData.resourceId
             );
 
             expect(getResult.status).toBe(404);

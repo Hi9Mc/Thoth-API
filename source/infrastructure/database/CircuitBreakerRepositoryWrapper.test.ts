@@ -23,7 +23,7 @@ class MockRepository implements ProjectObjectRepository<ProjectObject> {
     }
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}`;
     }
 
     private checkFailure() {
@@ -133,8 +133,7 @@ describe('CircuitBreakerRepositoryWrapper Infrastructure', () => {
         const testKey: ProjectObjectKey = {
             tenantId: 'test-project-123',
             resourceType: 'document',
-            resourceId: 'doc-456',
-            version: 1
+            resourceId: 'doc-456'
         };
 
         it('should delegate create operations to wrapped repository', async () => {

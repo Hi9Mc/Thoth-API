@@ -25,11 +25,15 @@ describe('DynamoDbDatabaseService', () => {
 
   describe('create', () => {
     it('should create an object successfully', async () => {
+      // Mock getByKey call to return null (object doesn't exist)
+      ddbMock.on(GetCommand).resolves({});
+      // Mock create call
       ddbMock.on(PutCommand).resolves({});
 
       const result = await db.create(obj1);
 
       expect(result).toEqual(obj1);
+      expect(ddbMock.commandCalls(GetCommand)).toHaveLength(1);
       expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
       const putCall = ddbMock.commandCalls(PutCommand)[0];
       expect(putCall.args[0].input).toMatchObject({
@@ -37,7 +41,7 @@ describe('DynamoDbDatabaseService', () => {
         Item: {
           ...obj1,
           pk: 'p1',
-          sk: 'typeA#c1#1'
+          sk: 'typeA#c1'
         }
       });
     });
@@ -48,28 +52,28 @@ describe('DynamoDbDatabaseService', () => {
       const dynamoItem = {
         ...obj1,
         pk: 'p1',
-        sk: 'typeA#c1#1'
+        sk: 'typeA#c1'
       };
 
       ddbMock.on(GetCommand).resolves({
         Item: dynamoItem
       });
 
-      const result = await db.getByKey('p1', 'typeA', 'c1', 1);
+      const result = await db.getByKey('p1', 'typeA', 'c1');
 
       expect(result).toEqual(obj1);
       expect(ddbMock.commandCalls(GetCommand)).toHaveLength(1);
       const getCall = ddbMock.commandCalls(GetCommand)[0];
       expect(getCall.args[0].input).toMatchObject({
         TableName: 'test-table',
-        Key: { pk: 'p1', sk: 'typeA#c1#1' }
+        Key: { pk: 'p1', sk: 'typeA#c1' }
       });
     });
 
     it('should return null when object not found', async () => {
       ddbMock.on(GetCommand).resolves({});
 
-      const result = await db.getByKey('p1', 'typeA', 'c1', 1);
+      const result = await db.getByKey('p1', 'typeA', 'c1');
 
       expect(result).toBeNull();
     });
@@ -80,7 +84,7 @@ describe('DynamoDbDatabaseService', () => {
       const dynamoItem = {
         ...obj1,
         pk: 'p1',
-        sk: 'typeA#c1#1'
+        sk: 'typeA#c1'
       };
 
       // Mock getByKey call first
@@ -91,7 +95,7 @@ describe('DynamoDbDatabaseService', () => {
       // Mock update call
       ddbMock.on(PutCommand).resolves({});
 
-      const updatedObj = { ...obj1, name: 'AlphaX' };
+      const updatedObj = { ...obj1, name: 'AlphaX', version: 2 };
       const result = await db.update(updatedObj);
 
       expect(result).toEqual(updatedObj);
@@ -111,17 +115,17 @@ describe('DynamoDbDatabaseService', () => {
   describe('delete', () => {
     it('should delete an existing object', async () => {
       ddbMock.on(DeleteCommand).resolves({
-        Attributes: { ...obj1, pk: 'p1', sk: 'typeA#c1#1' }
+        Attributes: { ...obj1, pk: 'p1', sk: 'typeA#c1' }
       });
 
-      const result = await db.delete('p1', 'typeA', 'c1', 1);
+      const result = await db.delete('p1', 'typeA', 'c1');
 
       expect(result).toBe(true);
       expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(1);
       const deleteCall = ddbMock.commandCalls(DeleteCommand)[0];
       expect(deleteCall.args[0].input).toMatchObject({
         TableName: 'test-table',
-        Key: { pk: 'p1', sk: 'typeA#c1#1' },
+        Key: { pk: 'p1', sk: 'typeA#c1' },
         ReturnValues: 'ALL_OLD'
       });
     });
@@ -129,7 +133,7 @@ describe('DynamoDbDatabaseService', () => {
     it('should return false when object not found', async () => {
       ddbMock.on(DeleteCommand).resolves({});
 
-      const result = await db.delete('p1', 'typeA', 'c1', 1);
+      const result = await db.delete('p1', 'typeA', 'c1');
 
       expect(result).toBe(false);
     });
@@ -138,8 +142,8 @@ describe('DynamoDbDatabaseService', () => {
   describe('search', () => {
     it('should search with AND condition', async () => {
       const items = [
-        { ...obj1, pk: 'p1', sk: 'typeA#c1#1' },
-        { ...obj2, pk: 'p1', sk: 'typeA#c2#1' }
+        { ...obj1, pk: 'p1', sk: 'typeA#c1' },
+        { ...obj2, pk: 'p1', sk: 'typeA#c2' }
       ];
 
       ddbMock.on(ScanCommand).resolves({
