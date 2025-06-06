@@ -48,7 +48,7 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   static getInstanceByTenantId<T extends ProjectObject = ProjectObject>(tenantId: string): DynamoDbDatabaseService<T> {
     const key = `tenant_${tenantId}`;
     if (!this.instances.has(key)) {
-      this.instances.set(key, new DynamoDbDatabaseService<T>(`ThothObjects_${tenantId}`));
+      this.instances.set(key, new DynamoDbDatabaseService<T>(tenantId));
     }
     return this.instances.get(key) as DynamoDbDatabaseService<T>;
   }

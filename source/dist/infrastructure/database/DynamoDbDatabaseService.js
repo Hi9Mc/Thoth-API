@@ -20,7 +20,7 @@ class DynamoDbDatabaseService {
     static getInstanceByTenantId(tenantId) {
         const key = `tenant_${tenantId}`;
         if (!this.instances.has(key)) {
-            this.instances.set(key, new DynamoDbDatabaseService(`ThothObjects_${tenantId}`));
+            this.instances.set(key, new DynamoDbDatabaseService(tenantId));
         }
         return this.instances.get(key);
     }

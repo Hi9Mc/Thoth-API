@@ -45,8 +45,7 @@ export class RepositoryFactory {
             case DatabaseType.MONGODB:
                 const mongoService = new MongoDbDatabaseService<T>(
                     config.connectionString, 
-                    config.databaseName, 
-                    config.collectionName
+                    config.databaseName
                 );
                 repository = new DatabaseRepositoryAdapter(mongoService);
                 break;

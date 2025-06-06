@@ -13,23 +13,18 @@ import { MongoClient, Db, Collection, Filter, Document } from 'mongodb';
 export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> implements IDatabaseService<T> {
   private client: MongoClient;
   private db: Db;
-  private collection: Collection<T>;
   private connectionString: string;
   private databaseName: string;
-  private collectionName: string;
   private static instances: Map<string, MongoDbDatabaseService<any>> = new Map();
 
   constructor(
     connectionString = 'mongodb://localhost:27017',
-    databaseName = 'thoth',
-    collectionName = 'objects'
+    databaseName = 'thoth'
   ) {
     this.connectionString = connectionString;
     this.databaseName = databaseName;
-    this.collectionName = collectionName;
     this.client = new MongoClient(connectionString);
     this.db = this.client.db(databaseName);
-    this.collection = this.db.collection<T>(collectionName);
   }
 
   static getInstance<T extends ProjectObject = ProjectObject>(): MongoDbDatabaseService<T> {
@@ -45,8 +40,7 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     if (!this.instances.has(key)) {
       this.instances.set(key, new MongoDbDatabaseService(
         'mongodb://localhost:27017',
-        'thoth',
-        `objects_${tenantId}`
+        tenantId
       ));
     }
     return this.instances.get(key) as MongoDbDatabaseService<T>;
@@ -56,20 +50,26 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return `${tenantId}#${resourceType}#${resourceId}#${version}`;
   }
 
+  private getCollection(resourceType: string): Collection<T> {
+    return this.db.collection<T>(resourceType);
+  }
+
   async create(obj: T): Promise<T> {
     const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const collection = this.getCollection(obj.resourceType);
     
     const document = {
       ...obj,
       _id
     };
 
-    await this.collection.insertOne(document as any);
+    await collection.insertOne(document as any);
     return obj;
   }
 
   async update(obj: T): Promise<T> {
     const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
+    const collection = this.getCollection(obj.resourceType);
     
     // First check if the object exists
     const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
@@ -82,21 +82,23 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
       _id
     };
 
-    await this.collection.replaceOne({ _id } as Filter<T>, document as any);
+    await collection.replaceOne({ _id } as Filter<T>, document as any);
     return obj;
   }
 
   async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
     const _id = this.generateKey(tenantId, resourceType, resourceId, version);
+    const collection = this.getCollection(resourceType);
     
-    const result = await this.collection.deleteOne({ _id } as Filter<T>);
+    const result = await collection.deleteOne({ _id } as Filter<T>);
     return result.deletedCount > 0;
   }
 
   async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
     const _id = this.generateKey(tenantId, resourceType, resourceId, version);
+    const collection = this.getCollection(resourceType);
     
-    const result = await this.collection.findOne({ _id } as Filter<T>);
+    const result = await collection.findOne({ _id } as Filter<T>);
     if (!result) {
       return null;
     }
@@ -109,15 +111,42 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   async search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[]; total: number }> {
     const filter = this.buildMongoFilter(condition);
     
+    // Check if resourceType is specified in the search conditions
+    const resourceType = this.extractResourceTypeFromCondition(condition);
+    
+    if (resourceType) {
+      // Search in specific collection
+      return this.searchInCollection(resourceType, filter, pagination);
+    } else {
+      // Search across all collections in the database
+      return this.searchAcrossCollections(filter, pagination);
+    }
+  }
+
+  private extractResourceTypeFromCondition(condition: SearchOption<T>): string | null {
+    for (const cond of condition.conditions) {
+      if ('key' in cond && cond.key === 'resourceType' && cond.operator === SearchConditionOperator.EQUALS) {
+        return cond.value as string;
+      } else if ('conditions' in cond) {
+        const resourceType = this.extractResourceTypeFromCondition(cond);
+        if (resourceType) return resourceType;
+      }
+    }
+    return null;
+  }
+
+  private async searchInCollection(resourceType: string, filter: Filter<T>, pagination: PaginationOption<T>): Promise<{ results: T[]; total: number }> {
+    const collection = this.getCollection(resourceType);
+    
     // Get total count
-    const total = await this.collection.countDocuments(filter);
+    const total = await collection.countDocuments(filter);
     
     // Build query with pagination
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 20;
     const skip = (page - 1) * limit;
     
-    let query = this.collection.find(filter).skip(skip).limit(limit);
+    let query = collection.find(filter).skip(skip).limit(limit);
     
     // Apply sorting if specified
     if (pagination.sortBy) {
@@ -136,15 +165,88 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
     return { results, total };
   }
 
+  private async searchAcrossCollections(filter: Filter<T>, pagination: PaginationOption<T>): Promise<{ results: T[]; total: number }> {
+    // Get all collections in the database
+    const collections = await this.db.listCollections().toArray();
+    const allResults: T[] = [];
+    let totalCount = 0;
+
+    // Search in each collection
+    for (const collectionInfo of collections) {
+      const collection = this.db.collection<T>(collectionInfo.name);
+      
+      // Get count from this collection
+      const count = await collection.countDocuments(filter);
+      totalCount += count;
+      
+      // Get documents from this collection
+      const documents = await collection.find(filter).toArray();
+      const cleanedDocuments = documents.map(doc => {
+        const { _id, ...objectData } = doc as any;
+        return objectData as T;
+      });
+      
+      allResults.push(...cleanedDocuments);
+    }
+
+    // Apply sorting if specified
+    if (pagination.sortBy) {
+      allResults.sort((a, b) => {
+        const aVal = a[pagination.sortBy!];
+        const bVal = b[pagination.sortBy!];
+        if (aVal < bVal) return pagination.sortDirection === 'DESC' ? 1 : -1;
+        if (aVal > bVal) return pagination.sortDirection === 'DESC' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    // Apply pagination
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const start = (page - 1) * limit;
+    const results = allResults.slice(start, start + limit);
+
+    return { results, total: totalCount };
+  }
+
   async exists(condition: SearchOption<T>): Promise<boolean> {
     const filter = this.buildMongoFilter(condition);
-    const result = await this.collection.findOne(filter);
-    return result !== null;
+    const resourceType = this.extractResourceTypeFromCondition(condition);
+    
+    if (resourceType) {
+      const collection = this.getCollection(resourceType);
+      const result = await collection.findOne(filter);
+      return result !== null;
+    } else {
+      // Check across all collections
+      const collections = await this.db.listCollections().toArray();
+      for (const collectionInfo of collections) {
+        const collection = this.db.collection<T>(collectionInfo.name);
+        const result = await collection.findOne(filter);
+        if (result) return true;
+      }
+      return false;
+    }
   }
 
   async count(condition: SearchOption<T>): Promise<number> {
     const filter = this.buildMongoFilter(condition);
-    return await this.collection.countDocuments(filter);
+    const resourceType = this.extractResourceTypeFromCondition(condition);
+    
+    if (resourceType) {
+      const collection = this.getCollection(resourceType);
+      return await collection.countDocuments(filter);
+    } else {
+      // Count across all collections
+      const collections = await this.db.listCollections().toArray();
+      let totalCount = 0;
+      for (const collectionInfo of collections) {
+        const collection = this.db.collection<T>(collectionInfo.name);
+        const count = await collection.countDocuments(filter);
+        totalCount += count;
+      }
+      return totalCount;
+    }
   }
 
   private buildMongoFilter(condition: SearchOption<T>): Filter<T> {
@@ -213,11 +315,29 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   }
 
   // Utility method to drop collection (for testing cleanup)
-  async dropCollection(): Promise<void> {
+  async dropCollection(resourceType?: string): Promise<void> {
     try {
-      await this.collection.drop();
+      if (resourceType) {
+        const collection = this.getCollection(resourceType);
+        await collection.drop();
+      } else {
+        // Drop all collections in the database
+        const collections = await this.db.listCollections().toArray();
+        for (const collectionInfo of collections) {
+          await this.db.collection(collectionInfo.name).drop();
+        }
+      }
     } catch (error) {
       // Ignore errors if collection doesn't exist
+    }
+  }
+
+  // Utility method to drop entire database (for testing cleanup)
+  async dropDatabase(): Promise<void> {
+    try {
+      await this.db.dropDatabase();
+    } catch (error) {
+      // Ignore errors if database doesn't exist
     }
   }
 }

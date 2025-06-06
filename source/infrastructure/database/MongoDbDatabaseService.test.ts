@@ -28,8 +28,17 @@ jest.mock('mongodb', () => {
 
   mockCollection.find.mockReturnValue(mockFind);
 
+  const mockListCollections = {
+    toArray: jest.fn().mockResolvedValue([
+      { name: 'typeA' },
+      { name: 'typeB' }
+    ])
+  };
+
   const mockDb = {
-    collection: jest.fn().mockReturnValue(mockCollection)
+    collection: jest.fn().mockReturnValue(mockCollection),
+    listCollections: jest.fn().mockReturnValue(mockListCollections),
+    dropDatabase: jest.fn()
   };
 
   const mockClient = {
@@ -48,6 +57,7 @@ describe('MongoDbDatabaseService', () => {
   let db: MongoDbDatabaseService<ProjectObject>;
   let mockCollection: any;
   let mockFind: any;
+  let mockDb: any;
   
   const obj1: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c1', version: 1, name: 'Alpha' };
   const obj2: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c2', version: 1, name: 'Beta' };
@@ -57,13 +67,13 @@ describe('MongoDbDatabaseService', () => {
     // Clear all mocks
     jest.clearAllMocks();
     
-    db = new MongoDbDatabaseService<ProjectObject>('mongodb://test', 'test-db', 'test-collection');
+    db = new MongoDbDatabaseService<ProjectObject>('mongodb://test', 'test-db');
     
     // Get mock instances
     const MockMongoClient = require('mongodb').MongoClient;
     const clientInstance = new MockMongoClient();
-    const dbInstance = clientInstance.db();
-    mockCollection = dbInstance.collection();
+    mockDb = clientInstance.db();
+    mockCollection = mockDb.collection();
     mockFind = mockCollection.find();
   });
 
@@ -186,29 +196,39 @@ describe('MongoDbDatabaseService', () => {
     it('should search with OR condition', async () => {
       const mockDocuments = [
         { _id: 'p1#typeA#c1#1', ...obj1 },
-        { _id: 'p1#typeA#c2#1', ...obj2 },
-        { _id: 'p2#typeB#c3#2', ...obj3 }
+        { _id: 'p1#typeA#c2#1', ...obj2 }
       ];
       
-      mockCollection.countDocuments.mockResolvedValue(3);
+      mockCollection.countDocuments.mockResolvedValue(2);
       mockFind.toArray.mockResolvedValue(mockDocuments);
 
       const condition: SearchOption<ProjectObject> = {
-        logic: SearchLogicalOperator.OR,
+        logic: SearchLogicalOperator.AND,
         conditions: [
-          { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
-          { key: 'tenantId', value: 'p2', operator: SearchConditionOperator.EQUALS },
+          { key: 'resourceType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
+          {
+            logic: SearchLogicalOperator.OR,
+            conditions: [
+              { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
+              { key: 'tenantId', value: 'p2', operator: SearchConditionOperator.EQUALS },
+            ]
+          }
         ],
       };
       const pagination: PaginationOption<ProjectObject> = { page: 1, limit: 10 };
       const { results, total } = await db.search(condition, pagination);
       
-      expect(total).toBe(3);
-      expect(results).toEqual([obj1, obj2, obj3]);
+      expect(total).toBe(2);
+      expect(results).toEqual([obj1, obj2]);
       expect(mockCollection.find).toHaveBeenCalledWith({
-        $or: [
-          { tenantId: 'p1' },
-          { tenantId: 'p2' }
+        $and: [
+          { resourceType: 'typeA' },
+          {
+            $or: [
+              { tenantId: 'p1' },
+              { tenantId: 'p2' }
+            ]
+          }
         ]
       });
     });
@@ -219,12 +239,13 @@ describe('MongoDbDatabaseService', () => {
         { _id: 'p1#typeA#c2#1', ...obj2 }
       ];
       
-      mockCollection.countDocuments.mockResolvedValue(3);
+      mockCollection.countDocuments.mockResolvedValue(2);
       mockFind.toArray.mockResolvedValue(sortedDocs);
 
       const condition: SearchOption<ProjectObject> = {
-        logic: SearchLogicalOperator.OR,
+        logic: SearchLogicalOperator.AND,
         conditions: [
+          { key: 'resourceType', value: 'typeA', operator: SearchConditionOperator.EQUALS },
           { key: 'tenantId', value: 'p1', operator: SearchConditionOperator.EQUALS },
         ],
       };
@@ -236,7 +257,7 @@ describe('MongoDbDatabaseService', () => {
       };
       const { results, total } = await db.search(condition, pagination);
 
-      expect(total).toBe(3);
+      expect(total).toBe(2);
       expect(results.length).toBe(2);
       expect(mockFind.skip).toHaveBeenCalledWith(0);
       expect(mockFind.limit).toHaveBeenCalledWith(2);
