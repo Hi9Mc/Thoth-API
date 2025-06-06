@@ -12,7 +12,7 @@ class MockProjectObjectRepository implements ProjectObjectRepository<ProjectObje
     private storage: Map<string, ProjectObject> = new Map();
 
     private createKey(key: ProjectObjectKey): string {
-        return `${key.tenantId}:${key.resourceType}:${key.resourceId}:${key.version}`;
+        return `${key.tenantId}:${key.resourceType}:${key.resourceId}`;
     }
 
     async create(obj: ProjectObject): Promise<ProjectObject> {
@@ -96,8 +96,7 @@ describe('ProjectObjectRepository Domain Interface', () => {
         const testKey: ProjectObjectKey = {
             tenantId: 'test-project-123',
             resourceType: 'document',
-            resourceId: 'doc-456',
-            version: 1
+            resourceId: 'doc-456'
         };
 
         it('should create and return a project object', async () => {
@@ -279,8 +278,7 @@ describe('ProjectObjectRepository Domain Interface', () => {
             const testKey: ProjectObjectKey = {
                 tenantId: 'test',
                 resourceType: 'doc',
-                resourceId: 'test',
-                version: 1
+                resourceId: 'test'
             };
 
             const searchCondition: SearchOption<ProjectObject> = {

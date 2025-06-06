@@ -34,22 +34,21 @@ describe('RestApiController', () => {
             it('should get resource successfully when it exists', async () => {
                 mockUseCase.getObject.mockResolvedValue(testObject);
 
-                const result = await controller.getResourceByPath('test-tenant', 'document', 'test-doc-1', 1);
+                const result = await controller.getResourceByPath('test-tenant', 'document', 'test-doc-1');
 
                 expect(result.status).toBe(200);
                 expect(result.data).toEqual(testObject);
                 expect(mockUseCase.getObject).toHaveBeenCalledWith({
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
 
             it('should return 404 when resource not found', async () => {
                 mockUseCase.getObject.mockResolvedValue(null);
 
-                const result = await controller.getResourceByPath('test-tenant', 'document', 'nonexistent', 1);
+                const result = await controller.getResourceByPath('test-tenant', 'document', 'nonexistent');
 
                 expect(result.status).toBe(404);
                 expect(result.error).toBe('Resource not found');
@@ -58,7 +57,7 @@ describe('RestApiController', () => {
             it('should return 500 on internal error', async () => {
                 mockUseCase.getObject.mockRejectedValue(new Error('Database error'));
 
-                const result = await controller.getResourceByPath('test-tenant', 'document', 'test-doc-1', 1);
+                const result = await controller.getResourceByPath('test-tenant', 'document', 'test-doc-1');
 
                 expect(result.status).toBe(500);
                 expect(result.error).toBe('Database error');
@@ -78,8 +77,7 @@ describe('RestApiController', () => {
                     ...requestBody,
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
 
@@ -114,8 +112,8 @@ describe('RestApiController', () => {
             });
 
             it('should return 404 when resource not found for update', async () => {
-                const requestBody = { title: 'Updated Document' };
-                mockUseCase.updateObject.mockRejectedValue(new Error('Object with key test-tenant#document#test-doc-1#1 not found'));
+                const requestBody = { title: 'Updated Document', version: 2 };
+                mockUseCase.updateObject.mockRejectedValue(new Error('Object with key test-tenant#document#test-doc-1 not found'));
 
                 const result = await controller.updateResourceByPath('test-tenant', 'document', 'test-doc-1', requestBody);
 
@@ -128,21 +126,20 @@ describe('RestApiController', () => {
             it('should delete resource successfully', async () => {
                 mockUseCase.deleteObject.mockResolvedValue(true);
 
-                const result = await controller.deleteResourceByPath('test-tenant', 'document', 'test-doc-1', 1);
+                const result = await controller.deleteResourceByPath('test-tenant', 'document', 'test-doc-1');
 
                 expect(result.status).toBe(204);
                 expect(mockUseCase.deleteObject).toHaveBeenCalledWith({
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
 
             it('should return 404 when resource not found for deletion', async () => {
                 mockUseCase.deleteObject.mockResolvedValue(false);
 
-                const result = await controller.deleteResourceByPath('test-tenant', 'document', 'nonexistent', 1);
+                const result = await controller.deleteResourceByPath('test-tenant', 'document', 'nonexistent');
 
                 expect(result.status).toBe(404);
                 expect(result.error).toBe('Resource not found');
@@ -155,22 +152,21 @@ describe('RestApiController', () => {
             it('should get resource successfully with headers', async () => {
                 mockUseCase.getObject.mockResolvedValue(testObject);
 
-                const result = await controller.getResourceByIdWithHeaders('test-doc-1', 'test-tenant', 'document', 1);
+                const result = await controller.getResourceByIdWithHeaders('test-doc-1', 'test-tenant', 'document');
 
                 expect(result.status).toBe(200);
                 expect(result.data).toEqual(testObject);
                 expect(mockUseCase.getObject).toHaveBeenCalledWith({
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
 
             it('should return 404 when resource not found with headers', async () => {
                 mockUseCase.getObject.mockResolvedValue(null);
 
-                const result = await controller.getResourceByIdWithHeaders('nonexistent', 'test-tenant', 'document', 1);
+                const result = await controller.getResourceByIdWithHeaders('nonexistent', 'test-tenant', 'document');
 
                 expect(result.status).toBe(404);
                 expect(result.error).toBe('Resource not found');
@@ -190,8 +186,7 @@ describe('RestApiController', () => {
                     ...requestBody,
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
         });
@@ -220,21 +215,20 @@ describe('RestApiController', () => {
             it('should delete resource successfully with headers', async () => {
                 mockUseCase.deleteObject.mockResolvedValue(true);
 
-                const result = await controller.deleteResourceByIdWithHeaders('test-doc-1', 'test-tenant', 'document', 1);
+                const result = await controller.deleteResourceByIdWithHeaders('test-doc-1', 'test-tenant', 'document');
 
                 expect(result.status).toBe(204);
                 expect(mockUseCase.deleteObject).toHaveBeenCalledWith({
                     tenantId: 'test-tenant',
                     resourceType: 'document',
-                    resourceId: 'test-doc-1',
-                    version: 1
+                    resourceId: 'test-doc-1'
                 });
             });
 
             it('should return 404 when resource not found for deletion with headers', async () => {
                 mockUseCase.deleteObject.mockResolvedValue(false);
 
-                const result = await controller.deleteResourceByIdWithHeaders('nonexistent', 'test-tenant', 'document', 1);
+                const result = await controller.deleteResourceByIdWithHeaders('nonexistent', 'test-tenant', 'document');
 
                 expect(result.status).toBe(404);
                 expect(result.error).toBe('Resource not found');
@@ -280,13 +274,20 @@ describe('RestApiController', () => {
     });
 
     describe('Version handling', () => {
-        it('should use default version 1 when not specified', async () => {
+        it('should not include version in get requests', async () => {
             mockUseCase.getObject.mockResolvedValue(testObject);
 
             await controller.getResourceByPath('test-tenant', 'document', 'test-doc-1');
 
             expect(mockUseCase.getObject).toHaveBeenCalledWith(
-                expect.objectContaining({ version: 1 })
+                expect.objectContaining({ 
+                    tenantId: 'test-tenant',
+                    resourceType: 'document',
+                    resourceId: 'test-doc-1'
+                })
+            );
+            expect(mockUseCase.getObject).toHaveBeenCalledWith(
+                expect.not.objectContaining({ version: expect.anything() })
             );
         });
 
