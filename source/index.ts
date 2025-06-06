@@ -13,7 +13,6 @@ export * from './infrastructure/database/CircuitBreakerRepositoryWrapper';
 export * from './infrastructure/database/RepositoryFactory';
 
 // Infrastructure Database Services
-export * from './infrastructure/database/IDatabaseService';
 export * from './infrastructure/database/InMemoryDatabaseService';
 export * from './infrastructure/database/DynamoDbDatabaseService';
 export * from './infrastructure/database/MongoDbDatabaseService';
