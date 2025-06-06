@@ -1,5 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import * as swaggerDocument from './swagger.json';
 import { RestApiController } from './interface-adapters/controllers/RestApiController';
 import { ProjectObject } from './domain/entities/ProjectObject';
 import { ProjectObjectUseCase } from './application/use-cases/ProjectObjectUseCase';
@@ -84,19 +86,27 @@ app.get('/health', (req: Request, res: Response) => {
     });
 });
 
-// Root endpoint
-app.get('/', (req: Request, res: Response) => {
+// API info endpoint
+app.get('/api', (req: Request, res: Response) => {
     res.json({
         message: 'Thoth Database System API',
         version: '1.0.0',
         endpoints: {
             'GET /health': 'Health check',
+            'GET /api': 'API information',
+            'GET /api-docs': 'API documentation (Swagger UI)',
             'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
             'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
             'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type'
         }
     });
 });
+
+// Swagger API documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Thoth API Documentation'
+}));
 
 // Path-based endpoints: /tenants/{tenantId}/resources/{resourceType}/{resourceId}
 app.get('/tenants/:tenantId/resources/:resourceType/:resourceId', async (req: Request, res: Response) => {
@@ -257,8 +267,10 @@ async function startServer() {
     
     app.listen(port, '0.0.0.0', () => {
         console.log(`Thoth API Server running on port ${port}`);
+        console.log(`UI: http://localhost:${port}/`);
+        console.log(`API info: http://localhost:${port}/api`);
         console.log(`Health check: http://localhost:${port}/health`);
-        console.log(`API documentation: http://localhost:${port}/`);
+        console.log(`Swagger UI: http://localhost:${port}/api-docs`);
     });
 }
 

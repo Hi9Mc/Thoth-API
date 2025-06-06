@@ -1,0 +1,752 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Thoth Database System API",
+    "description": "REST API for the Thoth multi-tenant database system with support for dynamic project objects",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Thoth API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check endpoint",
+        "description": "Returns the health status of the API server",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "healthy" },
+                    "timestamp": { "type": "string", "example": "2024-01-15T10:30:00.000Z" },
+                    "version": { "type": "string", "example": "1.0.0" },
+                    "database": { "type": "string", "example": "IN_MEMORY" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": ["System"],
+        "summary": "API information",
+        "description": "Returns basic API information and available endpoints",
+        "responses": {
+          "200": {
+            "description": "API information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "version": { "type": "string" },
+                    "endpoints": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/resources/{resourceType}/{resourceId}": {
+      "get": {
+        "tags": ["Path-based Resources"],
+        "summary": "Get resource by path",
+        "description": "Retrieve a specific resource by tenant, type, and ID",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "resourceType",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          },
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Path-based Resources"],
+        "summary": "Create resource by path",
+        "description": "Create a new resource with specified tenant, type, and ID",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "resourceType",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          },
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProjectObjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Path-based Resources"],
+        "summary": "Update resource by path",
+        "description": "Update an existing resource",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "resourceType",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          },
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProjectObjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resource updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Path-based Resources"],
+        "summary": "Delete resource by path",
+        "description": "Delete a specific resource",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "resourceType",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          },
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource deleted successfully"
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/resources/{resourceType}": {
+      "get": {
+        "tags": ["Path-based Resources"],
+        "summary": "Search resources by tenant and type",
+        "description": "Search and list resources for a specific tenant and resource type",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "resourceType",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 10 },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ProjectObject" }
+                    },
+                    "total": { "type": "integer", "example": 25 }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resources/{resourceId}": {
+      "get": {
+        "tags": ["Header-based Resources"],
+        "summary": "Get resource with headers",
+        "description": "Retrieve a specific resource using headers for tenant and resource type",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 },
+            "example": 1
+          },
+          {
+            "name": "X-Tenant-Id",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "X-Resource-Type",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required headers",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Header-based Resources"],
+        "summary": "Create resource with headers",
+        "description": "Create a new resource using headers for tenant and resource type",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "X-Tenant-Id",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "X-Resource-Type",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProjectObjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required headers or bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "409": {
+            "description": "Resource already exists",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Header-based Resources"],
+        "summary": "Update resource with headers",
+        "description": "Update an existing resource using headers for tenant and resource type",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "X-Tenant-Id",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "X-Resource-Type",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProjectObjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resource updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectObject" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required headers",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Header-based Resources"],
+        "summary": "Delete resource with headers",
+        "description": "Delete a specific resource using headers for tenant and resource type",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "user-guide"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 },
+            "example": 1
+          },
+          {
+            "name": "X-Tenant-Id",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "my-company"
+          },
+          {
+            "name": "X-Resource-Type",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "document"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource deleted successfully"
+          },
+          "400": {
+            "description": "Missing required headers",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProjectObject": {
+        "type": "object",
+        "required": ["tenantId", "resourceType", "resourceId", "version"],
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "Unique identifier for the tenant",
+            "example": "my-company"
+          },
+          "resourceType": {
+            "type": "string",
+            "description": "Type of the resource",
+            "example": "document"
+          },
+          "resourceId": {
+            "type": "string",
+            "description": "Unique identifier for the resource within the tenant and type",
+            "example": "user-guide"
+          },
+          "version": {
+            "type": "integer",
+            "description": "Version number of the resource",
+            "example": 1,
+            "minimum": 1
+          }
+        },
+        "additionalProperties": true,
+        "description": "Project object with dynamic fields. Additional custom fields can be added beyond the required fields."
+      },
+      "ProjectObjectInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the resource",
+            "example": "User Guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the resource",
+            "example": "Welcome to our system..."
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the resource",
+            "example": "Comprehensive user guide for new users"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the resource",
+            "example": "active"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata as key-value pairs",
+            "example": {
+              "author": "John Doe",
+              "category": "documentation",
+              "tags": ["guide", "tutorial"]
+            }
+          }
+        },
+        "additionalProperties": true,
+        "description": "Input object for creating or updating resources. All fields are optional and additional custom fields are supported."
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Resource not found"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "System endpoints for health check and API information"
+    },
+    {
+      "name": "Path-based Resources",
+      "description": "Resource operations using path parameters for tenant and resource type"
+    },
+    {
+      "name": "Header-based Resources",
+      "description": "Resource operations using headers for tenant and resource type context"
+    }
+  ]
+}
