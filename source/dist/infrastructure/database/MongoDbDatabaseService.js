@@ -20,7 +20,14 @@ class MongoDbDatabaseService {
     static getInstanceByTenantId(tenantId) {
         const key = `tenant_${tenantId}`;
         if (!this.instances.has(key)) {
-            this.instances.set(key, new MongoDbDatabaseService('mongodb://localhost:27017', tenantId));
+            const instance = new MongoDbDatabaseService('mongodb://localhost:27017', tenantId);
+            // Automatically ensure database connection is established (only in non-test environments)
+            if (process.env.NODE_ENV !== 'test') {
+                instance.ensureConnection().catch(error => {
+                    console.warn(`Failed to ensure connection for tenant ${tenantId}:`, error);
+                });
+            }
+            this.instances.set(key, instance);
         }
         return this.instances.get(key);
     }
@@ -31,6 +38,10 @@ class MongoDbDatabaseService {
         return this.db.collection(resourceType);
     }
     async create(obj) {
+        // Only ensure connection in non-test environments
+        if (process.env.NODE_ENV !== 'test') {
+            await this.ensureConnection();
+        }
         const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
         const collection = this.getCollection(obj.resourceType);
         const document = {
@@ -254,6 +265,18 @@ class MongoDbDatabaseService {
     // Utility method to connect to MongoDB (for testing purposes)
     async connect() {
         await this.client.connect();
+    }
+    // Utility method to ensure connection is established
+    async ensureConnection() {
+        try {
+            await this.client.connect();
+            // Ping the database to ensure connection is working
+            await this.client.db('admin').admin().ping();
+        }
+        catch (error) {
+            console.warn('Failed to establish database connection:', error);
+            throw error;
+        }
     }
     // Utility method to disconnect from MongoDB (for testing cleanup)
     async disconnect() {

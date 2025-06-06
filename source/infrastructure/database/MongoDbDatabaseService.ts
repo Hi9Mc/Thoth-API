@@ -38,10 +38,17 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   static getInstanceByTenantId<T extends ProjectObject = ProjectObject>(tenantId: string): MongoDbDatabaseService<T> {
     const key = `tenant_${tenantId}`;
     if (!this.instances.has(key)) {
-      this.instances.set(key, new MongoDbDatabaseService(
+      const instance = new MongoDbDatabaseService(
         'mongodb://localhost:27017',
         tenantId
-      ));
+      );
+      // Automatically ensure database connection is established (only in non-test environments)
+      if (process.env.NODE_ENV !== 'test') {
+        instance.ensureConnection().catch(error => {
+          console.warn(`Failed to ensure connection for tenant ${tenantId}:`, error);
+        });
+      }
+      this.instances.set(key, instance);
     }
     return this.instances.get(key) as MongoDbDatabaseService<T>;
   }
@@ -55,6 +62,11 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   }
 
   async create(obj: T): Promise<T> {
+    // Only ensure connection in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      await this.ensureConnection();
+    }
+    
     const _id = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     const collection = this.getCollection(obj.resourceType);
     
@@ -307,6 +319,18 @@ export class MongoDbDatabaseService<T extends ProjectObject = ProjectObject> imp
   // Utility method to connect to MongoDB (for testing purposes)
   async connect(): Promise<void> {
     await this.client.connect();
+  }
+
+  // Utility method to ensure connection is established
+  async ensureConnection(): Promise<void> {
+    try {
+      await this.client.connect();
+      // Ping the database to ensure connection is working
+      await this.client.db('admin').admin().ping();
+    } catch (error) {
+      console.warn('Failed to establish database connection:', error);
+      throw error;
+    }
   }
 
   // Utility method to disconnect from MongoDB (for testing cleanup)

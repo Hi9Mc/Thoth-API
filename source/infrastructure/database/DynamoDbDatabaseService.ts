@@ -48,7 +48,14 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   static getInstanceByTenantId<T extends ProjectObject = ProjectObject>(tenantId: string): DynamoDbDatabaseService<T> {
     const key = `tenant_${tenantId}`;
     if (!this.instances.has(key)) {
-      this.instances.set(key, new DynamoDbDatabaseService<T>(tenantId));
+      const instance = new DynamoDbDatabaseService<T>(tenantId);
+      // Automatically ensure table exists for the tenant (only in non-test environments)
+      if (process.env.NODE_ENV !== 'test') {
+        instance.ensureTable().catch(error => {
+          console.warn(`Failed to ensure table for tenant ${tenantId}:`, error);
+        });
+      }
+      this.instances.set(key, instance);
     }
     return this.instances.get(key) as DynamoDbDatabaseService<T>;
   }
@@ -61,6 +68,11 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   }
 
   async create(obj: T): Promise<T> {
+    // Only ensure table in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      await this.ensureTable();
+    }
+    
     const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     const item = {
@@ -79,6 +91,11 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   }
 
   async update(obj: T): Promise<T> {
+    // Only ensure table in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      await this.ensureTable();
+    }
+    
     const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     // First check if the item exists
@@ -116,6 +133,11 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   }
 
   async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
+    // Only ensure table in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      await this.ensureTable();
+    }
+    
     const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId, version);
 
     const command = new GetCommand({
@@ -133,6 +155,11 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   }
 
   async search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[]; total: number }> {
+    // Only ensure table in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      await this.ensureTable();
+    }
+    
     // For complex searches, we'll use scan operation
     // This could be optimized with better table design for specific query patterns
     
