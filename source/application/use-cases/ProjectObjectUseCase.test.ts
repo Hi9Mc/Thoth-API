@@ -8,9 +8,9 @@ describe('ProjectObjectUseCase', () => {
     let mockRepository: jest.Mocked<ProjectObjectRepository>;
 
     const testObject: ProjectObject = {
-        projectId: 'test-project',
-        contentType: 'test-type',
-        contentId: 'test-id',
+        tenantId: 'test-project',
+        resourceType: 'test-type',
+        resourceId: 'test-id',
         version: 1,
         name: 'Test Object'
     };
@@ -38,9 +38,9 @@ describe('ProjectObjectUseCase', () => {
 
             expect(result).toEqual(testObject);
             expect(mockRepository.findByKey).toHaveBeenCalledWith({
-                projectId: testObject.projectId,
-                contentType: testObject.contentType,
-                contentId: testObject.contentId,
+                tenantId: testObject.tenantId,
+                resourceType: testObject.resourceType,
+                resourceId: testObject.resourceId,
                 version: testObject.version
             });
             expect(mockRepository.create).toHaveBeenCalledWith(testObject);
@@ -57,10 +57,10 @@ describe('ProjectObjectUseCase', () => {
         });
 
         it('should validate object before creation', async () => {
-            const invalidObject = { ...testObject, projectId: '' };
+            const invalidObject = { ...testObject, tenantId: '' };
 
             await expect(useCase.createObject(invalidObject)).rejects.toThrow(
-                'ProjectId is required and must be a string'
+                'TenantId is required and must be a string'
             );
 
             expect(mockRepository.findByKey).not.toHaveBeenCalled();
@@ -92,9 +92,9 @@ describe('ProjectObjectUseCase', () => {
 
     describe('deleteObject', () => {
         const key: ProjectObjectKey = {
-            projectId: 'test-project',
-            contentType: 'test-type',
-            contentId: 'test-id',
+            tenantId: 'test-project',
+            resourceType: 'test-type',
+            resourceId: 'test-id',
             version: 1
         };
 
@@ -121,9 +121,9 @@ describe('ProjectObjectUseCase', () => {
     describe('getObject', () => {
         it('should return object when it exists', async () => {
             const key: ProjectObjectKey = {
-                projectId: 'test-project',
-                contentType: 'test-type',
-                contentId: 'test-id',
+                tenantId: 'test-project',
+                resourceType: 'test-type',
+                resourceId: 'test-id',
                 version: 1
             };
 
@@ -137,9 +137,9 @@ describe('ProjectObjectUseCase', () => {
 
         it('should return null when object does not exist', async () => {
             const key: ProjectObjectKey = {
-                projectId: 'test-project',
-                contentType: 'test-type',
-                contentId: 'test-id',
+                tenantId: 'test-project',
+                resourceType: 'test-type',
+                resourceId: 'test-id',
                 version: 1
             };
 
@@ -193,26 +193,26 @@ describe('ProjectObjectUseCase', () => {
 
     describe('validation', () => {
         it('should validate projectId', async () => {
-            const invalidObject = { ...testObject, projectId: null as any };
+            const invalidObject = { ...testObject, tenantId: null as any };
 
             await expect(useCase.createObject(invalidObject)).rejects.toThrow(
-                'ProjectId is required and must be a string'
+                'TenantId is required and must be a string'
             );
         });
 
         it('should validate contentType', async () => {
-            const invalidObject = { ...testObject, contentType: null as any };
+            const invalidObject = { ...testObject, resourceType: null as any };
 
             await expect(useCase.createObject(invalidObject)).rejects.toThrow(
-                'ContentType is required and must be a string'
+                'ResourceType is required and must be a string'
             );
         });
 
         it('should validate contentId', async () => {
-            const invalidObject = { ...testObject, contentId: '' };
+            const invalidObject = { ...testObject, resourceId: '' };
 
             await expect(useCase.createObject(invalidObject)).rejects.toThrow(
-                'ContentId is required and must be a string'
+                'ResourceId is required and must be a string'
             );
         });
 

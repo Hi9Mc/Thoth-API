@@ -45,23 +45,23 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return this.instances.get(key) as DynamoDbDatabaseService<T>;
   }
 
-  static getInstanceByProjectId<T extends ProjectObject = ProjectObject>(projectId: string): DynamoDbDatabaseService<T> {
-    const key = `project_${projectId}`;
+  static getInstanceByTenantId<T extends ProjectObject = ProjectObject>(tenantId: string): DynamoDbDatabaseService<T> {
+    const key = `tenant_${tenantId}`;
     if (!this.instances.has(key)) {
-      this.instances.set(key, new DynamoDbDatabaseService<T>(`ThothObjects_${projectId}`));
+      this.instances.set(key, new DynamoDbDatabaseService<T>(`ThothObjects_${tenantId}`));
     }
     return this.instances.get(key) as DynamoDbDatabaseService<T>;
   }
 
-  private generateKey(projectId: string, contentType: string, contentId: string, version: number): { pk: string; sk: string } {
+  private generateKey(tenantId: string, resourceType: string, resourceId: string, version: number): { pk: string; sk: string } {
     return {
-      pk: projectId,
-      sk: `${contentType}#${contentId}#${version}`
+      pk: tenantId,
+      sk: `${resourceType}#${resourceId}#${version}`
     };
   }
 
   async create(obj: T): Promise<T> {
-    const { pk, sk } = this.generateKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     const item = {
       ...obj,
@@ -79,10 +79,10 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
   }
 
   async update(obj: T): Promise<T> {
-    const { pk, sk } = this.generateKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const { pk, sk } = this.generateKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     
     // First check if the item exists
-    const existing = await this.getByKey(obj.projectId, obj.contentType, obj.contentId, obj.version);
+    const existing = await this.getByKey(obj.tenantId, obj.resourceType, obj.resourceId, obj.version);
     if (!existing) {
       throw new Error('Object not found');
     }
@@ -102,8 +102,8 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return obj;
   }
 
-  async delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean> {
-    const { pk, sk } = this.generateKey(projectId, contentType, contentId, version);
+  async delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
+    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId, version);
 
     const command = new DeleteCommand({
       TableName: this.tableName,
@@ -115,8 +115,8 @@ export class DynamoDbDatabaseService<T extends ProjectObject = ProjectObject> im
     return !!result.Attributes;
   }
 
-  async getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null> {
-    const { pk, sk } = this.generateKey(projectId, contentType, contentId, version);
+  async getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
+    const { pk, sk } = this.generateKey(tenantId, resourceType, resourceId, version);
 
     const command = new GetCommand({
       TableName: this.tableName,

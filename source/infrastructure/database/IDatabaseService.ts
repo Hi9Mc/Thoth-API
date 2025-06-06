@@ -23,9 +23,9 @@ export enum SortDirection {
 }
 
 export interface ProjectObject {
-    projectId: string;
-    contentType: string;
-    contentId: string;
+    tenantId: string;
+    resourceType: string;
+    resourceId: string;
     version: number;
     [key: string]: any;
 }
@@ -51,8 +51,8 @@ export interface PaginationOption<T = any> {
 export interface IDatabaseService<T extends { [key: string]: any } = ProjectObject> {
     create(obj: T): Promise<T>;
     update(obj: T): Promise<T>;
-    delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean>;
-    getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null>;
+    delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean>;
+    getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null>;
     search(condition: SearchOption<T>, pagination: PaginationOption<T>): Promise<{ results: T[], total: number }>;
     exists(condition: SearchOption<T>): Promise<boolean>;
     count(condition: SearchOption<T>): Promise<number>;
@@ -61,5 +61,5 @@ export interface IDatabaseService<T extends { [key: string]: any } = ProjectObje
 export interface IDatabaseServiceConstructor<T extends { [key: string]: any } = ProjectObject> {
     new (): IDatabaseService<T>;
     getInstance(): IDatabaseService<T>;
-    getInstanceByProjectId(projectId: string): IDatabaseService<T>;
+    getInstanceByTenantId(tenantId: string): IDatabaseService<T>;
 }

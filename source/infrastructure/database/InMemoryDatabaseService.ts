@@ -63,25 +63,25 @@ export class InMemoryDatabaseService<T extends ProjectObject = ProjectObject> im
 
   update(obj: T): Promise<T> {
     const idx = this.data.findIndex(
-      o => o.projectId === obj.projectId && o.contentType === obj.contentType && o.contentId === obj.contentId && o.version === obj.version
+      o => o.tenantId === obj.tenantId && o.resourceType === obj.resourceType && o.resourceId === obj.resourceId && o.version === obj.version
     );
     if (idx === -1) throw new Error('Object not found');
     this.data[idx] = obj;
     return Promise.resolve(obj);
   }
 
-  delete(projectId: string, contentType: string, contentId: string, version: number): Promise<boolean> {
+  delete(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<boolean> {
     const idx = this.data.findIndex(
-      o => o.projectId === projectId && o.contentType === contentType && o.contentId === contentId && o.version === version
+      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version
     );
     if (idx === -1) return Promise.resolve(false);
     this.data.splice(idx, 1);
     return Promise.resolve(true);
   }
 
-  getByKey(projectId: string, contentType: string, contentId: string, version: number): Promise<T | null> {
+  getByKey(tenantId: string, resourceType: string, resourceId: string, version: number): Promise<T | null> {
     const obj = this.data.find(
-      o => o.projectId === projectId && o.contentType === contentType && o.contentId === contentId && o.version === version
+      o => o.tenantId === tenantId && o.resourceType === resourceType && o.resourceId === resourceId && o.version === version
     );
     return Promise.resolve(obj ?? null);
   }

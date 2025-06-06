@@ -14,9 +14,9 @@ const ddbMock = mockClient(DynamoDBDocumentClient);
 
 describe('DynamoDbDatabaseService', () => {
   let db: DynamoDbDatabaseService<ProjectObject>;
-  const obj1: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c1', version: 1, name: 'Alpha' };
-  const obj2: ProjectObject = { projectId: 'p1', contentType: 'typeA', contentId: 'c2', version: 1, name: 'Beta' };
-  const obj3: ProjectObject = { projectId: 'p2', contentType: 'typeB', contentId: 'c3', version: 2, name: 'Gamma' };
+  const obj1: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c1', version: 1, name: 'Alpha' };
+  const obj2: ProjectObject = { tenantId: 'p1', resourceType: 'typeA', resourceId: 'c2', version: 1, name: 'Beta' };
+  const obj3: ProjectObject = { tenantId: 'p2', resourceType: 'typeB', resourceId: 'c3', version: 2, name: 'Gamma' };
 
   beforeEach(() => {
     ddbMock.reset();
@@ -371,10 +371,10 @@ describe('DynamoDbDatabaseService', () => {
       expect(instance1).toBe(instance2);
     });
 
-    it('should return project-specific instances for getInstanceByProjectId', () => {
-      const instance1 = DynamoDbDatabaseService.getInstanceByProjectId('project1');
-      const instance2 = DynamoDbDatabaseService.getInstanceByProjectId('project1');
-      const instance3 = DynamoDbDatabaseService.getInstanceByProjectId('project2');
+    it('should return tenant-specific instances for getInstanceByTenantId', () => {
+      const instance1 = DynamoDbDatabaseService.getInstanceByTenantId('tenant1');
+      const instance2 = DynamoDbDatabaseService.getInstanceByTenantId('tenant1');
+      const instance3 = DynamoDbDatabaseService.getInstanceByTenantId('tenant2');
 
       expect(instance1).toBe(instance2);
       expect(instance1).not.toBe(instance3);

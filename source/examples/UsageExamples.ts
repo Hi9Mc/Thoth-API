@@ -73,9 +73,9 @@ export async function demonstrateUsage() {
 
     // Create an object
     const testObject: ProjectObject = {
-        projectId: 'demo-project',
-        contentType: 'document',
-        contentId: 'demo-doc-1',
+        tenantId: 'demo-project',
+        resourceType: 'document',
+        resourceId: 'demo-doc-1',
         version: 1,
         title: 'Demo Document',
         content: 'This is a demonstration document'
@@ -93,7 +93,7 @@ export async function demonstrateUsage() {
     const searchResult = await controller.search({
         logic: SearchLogicalOperator.AND,
         conditions: [
-            { key: 'projectId', value: 'demo-project', operator: SearchConditionOperator.EQUALS }
+            { key: 'tenantId', value: 'demo-project', operator: SearchConditionOperator.EQUALS }
         ]
     });
     console.log('Search result:', searchResult);
