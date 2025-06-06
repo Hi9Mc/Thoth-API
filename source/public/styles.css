@@ -10,12 +10,17 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f5f5f5;
+    -webkit-text-size-adjust: 100%; /* Prevent text size adjustment on iOS */
+    -ms-text-size-adjust: 100%; /* Prevent text size adjustment on Windows Phone */
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    width: 100%; /* Ensure full width utilization */
+    min-height: 100vh; /* Ensure full viewport height */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 /* Header */
@@ -43,9 +48,11 @@ main {
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-bottom: 20px;
+    align-items: start; /* Prevent equal height stretching */
 }
 
-@media (max-width: 768px) {
+/* Improved responsive breakpoint for main grid */
+@media (max-width: 1024px) {
     main {
         grid-template-columns: 1fr;
     }
@@ -90,6 +97,11 @@ main {
     border-radius: 4px;
     font-size: 14px;
     transition: border-color 0.3s;
+    -webkit-appearance: none; /* Remove default styling on iOS */
+    -moz-appearance: none; /* Remove default styling on Firefox */
+    appearance: none; /* Remove default styling */
+    min-height: 44px; /* Ensure minimum touch target size */
+    box-sizing: border-box; /* Include padding and border in width */
 }
 
 .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
@@ -105,24 +117,28 @@ main {
 
 .custom-field {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Better alignment for multiline content */
     gap: 10px;
     margin-bottom: 10px;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 4px;
     border: 1px solid #e9ecef;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
 .custom-field label {
     min-width: 120px;
     font-weight: 500;
     color: #495057;
+    flex-shrink: 0; /* Prevent label from shrinking */
+    margin-bottom: 5px; /* Add spacing for wrapped layouts */
 }
 
 .custom-field input, .custom-field select, .custom-field textarea {
     flex: 1;
     margin: 0;
+    min-width: 200px; /* Minimum width for usability */
 }
 
 .custom-field .field-type {
@@ -170,6 +186,10 @@ button {
     font-size: 14px;
     font-weight: 500;
     transition: background-color 0.3s;
+    min-height: 44px; /* Ensure touch-friendly size */
+    min-width: 44px; /* Ensure minimum touch target */
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
 .btn-primary {
@@ -430,8 +450,25 @@ button {
 
 /* Enhanced Responsive Design */
 
-/* Large screens (1200px and above) */
-@media (min-width: 1200px) {
+/* Extra large screens (1440px and above) */
+@media (min-width: 1440px) {
+    .container {
+        max-width: 1600px;
+        padding: 40px;
+    }
+    
+    main {
+        grid-template-columns: 1.5fr 1fr;
+        gap: 40px;
+    }
+    
+    .form-section, .browse-section {
+        padding: 40px;
+    }
+}
+
+/* Large screens (1200px to 1439px) */
+@media (min-width: 1200px) and (max-width: 1439px) {
     .container {
         max-width: 1400px;
         padding: 30px;
@@ -444,6 +481,31 @@ button {
     
     .form-section, .browse-section {
         padding: 30px;
+    }
+}
+
+/* Medium-large screens (1025px to 1199px) */
+@media (min-width: 1025px) and (max-width: 1199px) {
+    .container {
+        max-width: 1200px;
+        padding: 25px;
+    }
+    
+    main {
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    
+    .form-section, .browse-section {
+        padding: 25px;
+    }
+    
+    .custom-field {
+        flex-wrap: wrap;
+    }
+    
+    .custom-field label {
+        min-width: 100px;
     }
 }
 
@@ -690,5 +752,106 @@ button {
         padding: 10px 12px;
         font-size: 0.85rem;
         min-height: 40px;
+    }
+}
+
+/* Landscape orientation on mobile devices */
+@media (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    
+    header h1 {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+    
+    header p {
+        font-size: 0.8rem;
+    }
+    
+    main {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    
+    .form-section, .browse-section {
+        padding: 15px;
+    }
+    
+    .form-section h2, .browse-section h2 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+    
+    .field-group {
+        margin-bottom: 8px;
+    }
+    
+    .custom-field {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .actions {
+        margin-top: 15px;
+    }
+    
+    button {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        min-height: 36px;
+    }
+}
+
+/* Print styles for better printability */
+@media print {
+    .container {
+        max-width: none;
+        padding: 0;
+        box-shadow: none;
+    }
+    
+    header, .form-section, .browse-section {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .actions, .json-editor-toolbar {
+        display: none;
+    }
+    
+    main {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .status-message {
+        display: none;
+    }
+}
+
+/* Focus styles for better accessibility */
+*:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+button:focus, input:focus, select:focus, textarea:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
