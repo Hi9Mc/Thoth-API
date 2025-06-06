@@ -74,9 +74,9 @@ const controller = new ProjectObjectController(useCase);
 
 // Use the controller
 const testObject: ProjectObject = {
-    projectId: 'demo-project',
-    contentType: 'document',
-    contentId: 'demo-doc-1',
+    tenantId: 'demo-project',
+    resourceType: 'document',
+    resourceId: 'demo-doc-1',
     version: 1,
     title: 'Demo Document'
 };
@@ -176,15 +176,15 @@ if ('getCircuitBreakerMetrics' in repository) {
 ### 3. วิธีใช้งานเมธอดต่าง ๆ (ใช้ได้กับทั้ง In-Memory และ DynamoDB)
    - `create(obj)` : สร้างข้อมูลใหม่
    - `update(obj)` : อัปเดตข้อมูล
-   - `delete(projectId, contentType, contentId, version)` : ลบข้อมูล
-   - `getByKey(projectId, contentType, contentId, version)` : ดึงข้อมูลตาม id
+   - `delete(tenantId, resourceType, resourceId, version)` : ลบข้อมูล
+   - `getByKey(tenantId, resourceType, resourceId, version)` : ดึงข้อมูลตาม id
    - `search(condition, pagination)` : ค้นหาข้อมูลตามเงื่อนไข
    - `exists(condition)` : ตรวจสอบว่ามีข้อมูลตามเงื่อนไขหรือไม่
    - `count(condition)` : นับจำนวนข้อมูลตามเงื่อนไข
 
    ตัวอย่าง:
    ```typescript
-   const obj = { projectId: '1', contentType: 'article', contentId: 'A1', version: 1 };
+   const obj = { tenantId: '1', resourceType: 'article', resourceId: 'A1', version: 1 };
    await db.create(obj);
    const found = await db.getByKey('1', 'article', 'A1', 1);
    ```
@@ -195,7 +195,7 @@ if ('getCircuitBreakerMetrics' in repository) {
    const condition = {
      logic: 'AND',
      conditions: [
-       { key: 'contentType', value: 'article', operator: 'EQUALS' },
+       { key: 'resourceType', value: 'article', operator: 'EQUALS' },
        { key: 'version', value: 1, operator: 'GREATER_THAN_OR_EQUAL' }
      ]
    };
@@ -262,21 +262,22 @@ docker compose down
 **หมายเหตุ:**
 - สามารถเพิ่ม implementation ใหม่ของ `IDatabaseService` ได้ เช่น เชื่อมต่อกับฐานข้อมูลจริง (MySQL, MongoDB ฯลฯ) โดยยึดตาม interface เดิม
 - DynamoDB Service รองรับการค้นหาที่ซับซ้อนด้วย nested AND/OR conditions
-- DynamoDB table structure: Partition Key = `projectId`, Sort Key = `contentType#contentId#version`
+- DynamoDB table structure: Each tenant gets its own table named `{tenantId}` with Partition Key = `tenantId`, Sort Key = `resourceType#resourceId#version`
+- MongoDB structure: Each tenant gets its own database named `{tenantId}` with collections named `{resourceType}`
 - สำหรับ production ควรใช้ IAM Role แทนการใส่ credentials โดยตรง
 - ตัวอย่างนี้เหมาะสำหรับ dev จบใหม่หรือผู้ที่ต้องการเข้าใจโครงสร้างและการใช้งานเบื้องต้นของโมดูลนี้
 
 ## การ Deploy DynamoDB Table
 
-สำหรับ production ควรสร้าง DynamoDB table ผ่าน Infrastructure as Code เช่น CloudFormation หรือ Terraform:
+สำหรับ production ควรสร้าง DynamoDB tables ผ่าน Infrastructure as Code เช่น CloudFormation หรือ Terraform:
 
 ```yaml
-# CloudFormation template
+# CloudFormation template - Example for tenant "my-company"
 Resources:
-  ThothObjectsTable:
+  MyCompanyTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: ThothObjects
+      TableName: my-company  # Table name matches tenantId
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: pk
@@ -289,3 +290,5 @@ Resources:
         - AttributeName: sk
           AttributeType: S
 ```
+
+**Note**: Each tenant requires its own DynamoDB table. For multi-tenant deployments, consider using Terraform or CDK to programmatically create tables for each tenant.

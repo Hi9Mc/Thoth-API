@@ -238,3 +238,41 @@ const resource = {
 ```
 
 All database operations, controllers, and use cases have been updated to use the new field names. The API endpoints provide a clean REST interface for both console applications and AWS Lambda functions.
+
+## Database Tenant Configuration
+
+The system has been updated to support true multi-tenant data isolation at the database level:
+
+### DynamoDB
+- **Table Naming**: Each tenant gets its own table named `{tenantId}`
+- **Example**: Tenant "my-company" uses table "my-company"
+- **Auto-Creation**: Tables are automatically created when a tenant is first accessed (in non-test environments)
+
+### MongoDB  
+- **Database Naming**: Each tenant gets its own database named `{tenantId}`
+- **Collection Naming**: Within each tenant database, collections are named by `{resourceType}`
+- **Example**: Tenant "my-company" uses database "my-company" with collections like "document", "user", "config"
+- **Auto-Creation**: Databases and collections are automatically created when data is first written (MongoDB's default behavior)
+
+### ElasticSearch (Future)
+- **Index Naming**: Pattern `{tenantId}_{resourceType}`
+- **Example**: Tenant "my-company" with resourceType "document" uses index "my-company_document"
+
+### Automatic Database/Table Creation
+
+The system now automatically creates the necessary database structures when a new tenant is used:
+
+- **DynamoDB**: When `DynamoDbDatabaseService.getInstanceByTenantId(tenantId)` is called, the system automatically attempts to create the tenant's table if it doesn't exist
+- **MongoDB**: When `MongoDbDatabaseService.getInstanceByTenantId(tenantId)` is called, the system establishes a connection and MongoDB automatically creates databases and collections as needed
+- **Test Environment**: Auto-creation is disabled during tests to avoid external dependencies
+
+**Usage Example:**
+```typescript
+// This will automatically create the "my-company" table in DynamoDB
+const dynamoService = DynamoDbDatabaseService.getInstanceByTenantId('my-company');
+
+// This will automatically create the "my-company" database in MongoDB
+const mongoService = MongoDbDatabaseService.getInstanceByTenantId('my-company');
+```
+
+This configuration provides complete data isolation between tenants while maintaining efficient access patterns for each tenant's data.

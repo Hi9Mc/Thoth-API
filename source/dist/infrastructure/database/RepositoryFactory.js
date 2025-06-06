@@ -29,7 +29,7 @@ class RepositoryFactory {
                 repository = new DatabaseRepositoryAdapter_1.DatabaseRepositoryAdapter(dynamoService);
                 break;
             case DatabaseType.MONGODB:
-                const mongoService = new MongoDbDatabaseService_1.MongoDbDatabaseService(config.connectionString, config.databaseName, config.collectionName);
+                const mongoService = new MongoDbDatabaseService_1.MongoDbDatabaseService(config.connectionString, config.databaseName);
                 repository = new DatabaseRepositoryAdapter_1.DatabaseRepositoryAdapter(mongoService);
                 break;
             default:
