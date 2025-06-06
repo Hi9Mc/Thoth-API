@@ -127,7 +127,7 @@ main {
 }
 
 .custom-field label {
-    min-width: 120px;
+    min-width: 100px; /* Reduced from 120px to give more space to textareas */
     font-weight: 500;
     color: #495057;
     flex-shrink: 0; /* Prevent label from shrinking */
@@ -138,6 +138,12 @@ main {
     flex: 1;
     margin: 0;
     min-width: 200px; /* Minimum width for usability */
+}
+
+/* Give textareas more space in custom fields */
+.custom-field textarea {
+    flex: 2; /* Textareas get twice the space of other inputs */
+    min-width: 300px; /* Larger minimum width for textareas */
 }
 
 .custom-field .field-type {
@@ -352,6 +358,8 @@ button {
 /* JSON Editor enhancements */
 .json-editor-container {
     position: relative;
+    flex: 2; /* Ensure JSON editor containers get more space */
+    min-width: 300px; /* Larger minimum width for JSON editors */
 }
 
 .json-editor-toolbar {
@@ -554,6 +562,12 @@ button {
     .custom-field input, .custom-field select, .custom-field textarea {
         flex: 1 1 200px;
         min-width: 200px;
+    }
+
+    /* Maintain larger textarea width on tablets */
+    .custom-field textarea, .custom-field .json-editor-container {
+        flex: 1 1 250px;
+        min-width: 250px;
     }
 }
 
