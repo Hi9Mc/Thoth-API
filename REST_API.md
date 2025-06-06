@@ -238,3 +238,22 @@ const resource = {
 ```
 
 All database operations, controllers, and use cases have been updated to use the new field names. The API endpoints provide a clean REST interface for both console applications and AWS Lambda functions.
+
+## Database Tenant Configuration
+
+The system has been updated to support true multi-tenant data isolation at the database level:
+
+### DynamoDB
+- **Table Naming**: Each tenant gets its own table named `{tenantId}`
+- **Example**: Tenant "my-company" uses table "my-company"
+
+### MongoDB  
+- **Database Naming**: Each tenant gets its own database named `{tenantId}`
+- **Collection Naming**: Within each tenant database, collections are named by `{resourceType}`
+- **Example**: Tenant "my-company" uses database "my-company" with collections like "document", "user", "config"
+
+### ElasticSearch (Future)
+- **Index Naming**: Pattern `{tenantId}_{resourceType}`
+- **Example**: Tenant "my-company" with resourceType "document" uses index "my-company_document"
+
+This configuration provides complete data isolation between tenants while maintaining efficient access patterns for each tenant's data.
