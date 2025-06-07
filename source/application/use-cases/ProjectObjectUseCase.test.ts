@@ -49,7 +49,7 @@ describe('ProjectObjectUseCase', () => {
             mockRepository.findByKey.mockResolvedValue(testObject);
 
             await expect(useCase.createObject(testObject)).rejects.toThrow(
-                'Object with key test-project#test-type#test-id already exists'
+                'Object with key test-project#test-type#test-id already exists. To update existing objects, use PUT instead of POST.'
             );
 
             expect(mockRepository.create).not.toHaveBeenCalled();
