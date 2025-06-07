@@ -30,7 +30,12 @@ export class ProjectObjectUseCase<T extends ProjectObject = ProjectObject> {
         });
 
         if (existing) {
-            throw new Error(`Object with key ${newObj.tenantId}#${newObj.resourceType}#${newObj.resourceId} already exists`);
+            // Provide a more helpful error message
+            if (obj.version && obj.version > 1) {
+                throw new Error(`Object with key ${newObj.tenantId}#${newObj.resourceType}#${newObj.resourceId} already exists. To update existing objects, use PUT instead of POST. Current version is ${existing.version}, use version ${existing.version + 1} for updates.`);
+            } else {
+                throw new Error(`Object with key ${newObj.tenantId}#${newObj.resourceType}#${newObj.resourceId} already exists. To update existing objects, use PUT instead of POST.`);
+            }
         }
 
         return this.repository.create(newObj);

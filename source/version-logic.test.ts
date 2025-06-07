@@ -50,7 +50,7 @@ describe('Version Logic - Optimistic Locking', () => {
 
             // Try to create again - should fail
             await expect(useCase.createObject(testObject)).rejects.toThrow(
-                'Object with key test-tenant#document#doc-1 already exists'
+                'Object with key test-tenant#document#doc-1 already exists. To update existing objects, use PUT instead of POST.'
             );
         });
     });
