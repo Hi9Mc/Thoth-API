@@ -329,14 +329,23 @@ async function saveObject() {
             return;
         }
         
-        const url = `/tenants/${encodeURIComponent(data.tenantId)}/resources/${encodeURIComponent(data.resourceType)}/${encodeURIComponent(data.resourceId)}`;
+        // Use header-based endpoint as specified in the requirements
+        const url = `/resources/${encodeURIComponent(data.resourceId)}`;
+        
+        // Prepare body data without tenant/resource info (they go in headers/URL)
+        const bodyData = { ...data };
+        delete bodyData.tenantId;
+        delete bodyData.resourceType;
+        delete bodyData.resourceId;
         
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Tenant-Id': data.tenantId,
+                'X-Resource-Type': data.resourceType
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(bodyData)
         });
         
         const result = await response.json();

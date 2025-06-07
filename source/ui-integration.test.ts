@@ -190,5 +190,56 @@ describe('UI Integration Test', () => {
 
             expect(getResult.status).toBe(404);
         });
+
+        it('should create Schema using header-based endpoint like the updated Save button does', async () => {
+            // This test validates the new Schema create functionality from issue #34
+            const resourceId = 'user-guide-01';
+            const tenantId = 'my-company';
+            const resourceType = 'document';
+
+            // Prepare body data like the UI does (without tenant/resource info)
+            const bodyData = {
+                version: 1,
+                title: 'User Guide',
+                content: 'Welcome to our system...',
+                description: 'Comprehensive user guide for new users',
+                status: 'active',
+                metadata: {
+                    author: 'John Doe',
+                    category: 'documentation',
+                    tags: ['guide', 'tutorial']
+                }
+            };
+
+            const result = await restController.createResourceByIdWithHeaders(
+                resourceId,
+                tenantId,
+                resourceType,
+                bodyData
+            );
+
+            expect(result.status).toBe(201);
+            expect(result.data).toMatchObject({
+                ...bodyData,
+                tenantId,
+                resourceType,
+                resourceId
+            });
+
+            // Verify the object was created correctly
+            const getResult = await restController.getResourceByIdWithHeaders(
+                resourceId,
+                tenantId,
+                resourceType
+            );
+
+            expect(getResult.status).toBe(200);
+            expect(getResult.data).toMatchObject({
+                ...bodyData,
+                tenantId,
+                resourceType,
+                resourceId
+            });
+        });
     });
 });
