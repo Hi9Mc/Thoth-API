@@ -439,12 +439,11 @@ async function deleteObject() {
             method: 'DELETE'
         });
         
-        const result = await response.json();
-        
         if (response.ok) {
             showMessage('Object deleted successfully!', 'success');
             clearForm();
         } else {
+            const result = await response.json();
             showMessage(`Error deleting object: ${result.error || 'Unknown error'}`, 'error');
         }
     } catch (error) {
