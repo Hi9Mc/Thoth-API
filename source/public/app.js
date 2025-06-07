@@ -322,10 +322,19 @@ function validateRequiredFields(data) {
 }
 
 async function saveObject() {
+    // Show loading indicator
+    showMessage('Saving object...', 'info');
+    
     try {
         const data = getFormData();
         
         if (!validateRequiredFields(data)) {
+            return;
+        }
+        
+        // Check if fetch API is available (browser compatibility)
+        if (typeof fetch === 'undefined') {
+            showMessage('Error: Your browser does not support the fetch API. Please use a modern browser.', 'error');
             return;
         }
         
@@ -338,6 +347,14 @@ async function saveObject() {
         delete bodyData.resourceType;
         delete bodyData.resourceId;
         
+        console.log('Saving object to:', url);
+        console.log('Headers:', {
+            'Content-Type': 'application/json',
+            'X-Tenant-Id': data.tenantId,
+            'X-Resource-Type': data.resourceType
+        });
+        console.log('Body data:', bodyData);
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -348,16 +365,34 @@ async function saveObject() {
             body: JSON.stringify(bodyData)
         });
         
-        const result = await response.json();
+        console.log('Response status:', response.status);
+        
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            console.error('Failed to parse response as JSON:', parseError);
+            showMessage('Error: Invalid response from server', 'error');
+            return;
+        }
+        
+        console.log('Response data:', result);
         
         if (response.ok) {
             showMessage('Object saved successfully!', 'success');
             currentObject = data;
         } else {
-            showMessage(`Error saving object: ${result.error || 'Unknown error'}`, 'error');
+            const errorMessage = result.error || `Server error (${response.status})`;
+            showMessage(`Error saving object: ${errorMessage}`, 'error');
+            console.error('Save failed:', errorMessage);
         }
     } catch (error) {
-        showMessage(`Error saving object: ${error.message}`, 'error');
+        console.error('Save object error:', error);
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showMessage('Error: Network request failed. Please check your connection and try again.', 'error');
+        } else {
+            showMessage(`Error saving object: ${error.message}`, 'error');
+        }
     }
 }
 
