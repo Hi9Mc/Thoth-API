@@ -439,13 +439,16 @@ async function deleteObject() {
             method: 'DELETE'
         });
         
-        const result = await response.json();
-        
         if (response.ok) {
             showMessage('Object deleted successfully!', 'success');
             clearForm();
         } else {
-            showMessage(`Error deleting object: ${result.error || 'Unknown error'}`, 'error');
+            try {
+                const result = await response.json();
+                showMessage(`Error deleting object: ${result.error || 'Unknown error'}`, 'error');
+            } catch (parseError) {
+                showMessage('Error deleting object: Invalid server response', 'error');
+            }
         }
     } catch (error) {
         showMessage(`Error deleting object: ${error.message}`, 'error');
