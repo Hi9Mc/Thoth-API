@@ -45,7 +45,8 @@ const mockRestController = {
     getResourceByIdWithHeaders: jest.fn(),
     createResourceByIdWithHeaders: jest.fn(),
     updateResourceByIdWithHeaders: jest.fn(),
-    deleteResourceByIdWithHeaders: jest.fn()
+    deleteResourceByIdWithHeaders: jest.fn(),
+    searchResourcesByHeaders: jest.fn()
 };
 
 // Mock implementations
@@ -270,7 +271,7 @@ describe('Server.ts Configuration', () => {
             const corsHeaders = {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-Id, X-Resource-Type'
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-Id, X-Resource-Type, X-Resource-Id'
             };
 
             expect(corsHeaders['Access-Control-Allow-Origin']).toBe('*');
@@ -323,8 +324,9 @@ describe('Server.ts Configuration', () => {
                     'GET /api': 'API information',
                     'GET /api-docs': 'API documentation (Swagger UI)',
                     'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
-                    'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
-                    'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type'
+                    'GET|POST|PUT|DELETE /resources': 'Header-based resource operations (requires X-Tenant-Id, X-Resource-Type, and X-Resource-Id headers)',
+                    'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type',
+                    'GET /resources/search': 'Header-based search resources (optional headers: X-Tenant-Id, X-Resource-Type, X-Resource-Id; supports q parameter)'
                 }
             };
 
@@ -333,39 +335,53 @@ describe('Server.ts Configuration', () => {
             expect(apiInfo.endpoints).toHaveProperty('GET /health');
             expect(apiInfo.endpoints).toHaveProperty('GET /api');
             expect(apiInfo.endpoints).toHaveProperty('GET /api-docs');
+            expect(apiInfo.endpoints).toHaveProperty('GET /resources/search');
+            expect(apiInfo.endpoints['GET /resources/search']).toBe('Header-based search resources (optional headers: X-Tenant-Id, X-Resource-Type, X-Resource-Id; supports q parameter)');
         });
     });
 
     describe('Request Header Validation', () => {
-        it('should validate required headers for header-based endpoints', () => {
-            const validateHeaders = (tenantId?: string, resourceType?: string) => {
-                if (!tenantId || !resourceType) {
+        it('should validate required headers for header-based CRUD endpoints', () => {
+            const validateCrudHeaders = (tenantId?: string, resourceType?: string, resourceId?: string) => {
+                if (!tenantId || !resourceType || !resourceId) {
                     return {
                         valid: false,
-                        error: 'Missing required headers: X-Tenant-Id and X-Resource-Type'
+                        error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id'
                     };
                 }
                 return { valid: true };
             };
 
-            expect(validateHeaders()).toEqual({
+            expect(validateCrudHeaders()).toEqual({
                 valid: false,
-                error: 'Missing required headers: X-Tenant-Id and X-Resource-Type'
+                error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id'
             });
 
-            expect(validateHeaders('tenant')).toEqual({
+            expect(validateCrudHeaders('tenant')).toEqual({
                 valid: false,
-                error: 'Missing required headers: X-Tenant-Id and X-Resource-Type'
+                error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id'
             });
 
-            expect(validateHeaders(undefined, 'type')).toEqual({
+            expect(validateCrudHeaders('tenant', 'type')).toEqual({
                 valid: false,
-                error: 'Missing required headers: X-Tenant-Id and X-Resource-Type'
+                error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id'
             });
 
-            expect(validateHeaders('tenant', 'type')).toEqual({
+            expect(validateCrudHeaders('tenant', 'type', 'id')).toEqual({
                 valid: true
             });
+        });
+
+        it('should allow optional headers for search endpoints', () => {
+            const validateSearchHeaders = (tenantId?: string, resourceType?: string, resourceId?: string) => {
+                // Search endpoints allow any combination of headers (all optional)
+                return { valid: true };
+            };
+
+            expect(validateSearchHeaders()).toEqual({ valid: true });
+            expect(validateSearchHeaders('tenant')).toEqual({ valid: true });
+            expect(validateSearchHeaders(undefined, 'type')).toEqual({ valid: true });
+            expect(validateSearchHeaders('tenant', 'type', 'id')).toEqual({ valid: true });
         });
     });
 
@@ -378,7 +394,7 @@ describe('Server.ts Configuration', () => {
                 };
             };
 
-            const badRequestError = createErrorResponse(400, 'Missing required headers: X-Tenant-Id and X-Resource-Type');
+            const badRequestError = createErrorResponse(400, 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id');
             const notFoundError = createErrorResponse(404, 'Route not found');
             const serverError = createErrorResponse(500, 'Internal server error');
 

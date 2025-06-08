@@ -67,27 +67,30 @@ Returns a list of resources matching the tenant and type.
 
 ### 2. Header-based Endpoints
 
-Format: `/resources/{resourceId}` with required headers
+Format: `/resources` with required headers for CRUD operations, `/resources/search` for search operations
 
 #### Get Resource with Headers
 ```
-GET /resources/{resourceId}?version={version}
+GET /resources?version={version}
 X-Tenant-Id: {tenantId}
 X-Resource-Type: {resourceType}
+X-Resource-Id: {resourceId}
 ```
 
 **Example:**
 ```bash
-GET /resources/user-guide?version=1
+GET /resources?version=1
 X-Tenant-Id: my-company
 X-Resource-Type: document
+X-Resource-Id: user-guide
 ```
 
 #### Create Resource with Headers
 ```
-POST /resources/{resourceId}
+POST /resources
 X-Tenant-Id: {tenantId}
 X-Resource-Type: {resourceType}
+X-Resource-Id: {resourceId}
 Content-Type: application/json
 
 {
@@ -99,9 +102,10 @@ Content-Type: application/json
 
 #### Update Resource with Headers
 ```
-PUT /resources/{resourceId}
+PUT /resources
 X-Tenant-Id: {tenantId}
 X-Resource-Type: {resourceType}
+X-Resource-Id: {resourceId}
 Content-Type: application/json
 
 {
@@ -113,9 +117,33 @@ Content-Type: application/json
 
 #### Delete Resource with Headers
 ```
-DELETE /resources/{resourceId}?version={version}
+DELETE /resources?version={version}
 X-Tenant-Id: {tenantId}
 X-Resource-Type: {resourceType}
+X-Resource-Id: {resourceId}
+```
+
+#### Search Resources with Headers
+```
+GET /resources/search?page=1&limit=20&sortBy=title&sortDirection=ASC&q=search_term
+X-Tenant-Id: {tenantId} (optional)
+X-Resource-Type: {resourceType} (optional)
+X-Resource-Id: {resourceId} (optional)
+```
+Returns a list of resources matching the optional criteria specified in headers and query parameters.
+
+**Examples:**
+```bash
+# Search with all filters
+GET /resources/search?page=1&limit=10&q=guide
+X-Tenant-Id: my-company
+X-Resource-Type: document
+
+# Search with no filters (returns all resources)
+GET /resources/search?page=1&limit=10
+
+# Search with text query only
+GET /resources/search?q=welcome
 ```
 
 ## Response Format

@@ -230,5 +230,51 @@ class RestApiController {
             };
         }
     }
+    /**
+     * GET /resources/search
+     * Search resources by optional headers and/or filter query
+     */
+    async searchResourcesByHeaders(tenantId, resourceType, resourceId, query = {}) {
+        try {
+            const conditions = [];
+            // Add conditions based on provided headers
+            if (tenantId) {
+                conditions.push({ key: 'tenantId', value: tenantId, operator: '=' });
+            }
+            if (resourceType) {
+                conditions.push({ key: 'resourceType', value: resourceType, operator: '=' });
+            }
+            if (resourceId) {
+                conditions.push({ key: 'resourceId', value: resourceId, operator: '=' });
+            }
+            // Handle 'q' query parameter for text search
+            if (query.q) {
+                // Add a text search condition - this would need to be adapted based on your specific search implementation
+                // For now, we'll search in common text fields that might exist in the data
+                const textSearchConditions = [
+                    { key: 'data', value: query.q, operator: 'contains' }
+                ];
+                conditions.push(...textSearchConditions);
+            }
+            const condition = conditions.length > 0 ? {
+                logic: 'AND',
+                conditions
+            } : undefined;
+            const pagination = {
+                page: parseInt(query.page) || 1,
+                limit: parseInt(query.limit) || 10,
+                sortBy: query.sortBy,
+                sortDirection: query.sortDirection
+            };
+            const result = await this.useCase.searchObjects(condition, pagination);
+            return { status: 200, data: result };
+        }
+        catch (error) {
+            return {
+                status: 500,
+                error: error instanceof Error ? error.message : 'Internal server error'
+            };
+        }
+    }
 }
 exports.RestApiController = RestApiController;
