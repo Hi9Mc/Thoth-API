@@ -322,4 +322,91 @@ describe('RestApiController', () => {
             expect(result.error).toBe('TenantId is required');
         });
     });
+
+    describe('Header-based Search Operations', () => {
+        it('should search resources by headers successfully', async () => {
+            const mockSearchResult = {
+                results: [testObject],
+                total: 1
+            };
+            mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
+
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', {});
+
+            expect(result.status).toBe(200);
+            expect(result.data).toEqual(mockSearchResult);
+            expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
+                {
+                    logic: 'AND',
+                    conditions: [
+                        { key: 'tenantId', value: 'test-tenant', operator: '=' },
+                        { key: 'resourceType', value: 'document', operator: '=' }
+                    ]
+                },
+                {
+                    page: 1,
+                    limit: 20,
+                    sortBy: undefined,
+                    sortDirection: undefined
+                }
+            );
+        });
+
+        it('should handle query parameters in header search', async () => {
+            const mockSearchResult = {
+                results: [testObject],
+                total: 1
+            };
+            mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
+
+            const query = {
+                page: 2,
+                limit: 10,
+                sortBy: 'title',
+                sortDirection: 'DESC'
+            };
+
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', query);
+
+            expect(result.status).toBe(200);
+            expect(result.data).toEqual(mockSearchResult);
+            expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
+                {
+                    logic: 'AND',
+                    conditions: [
+                        { key: 'tenantId', value: 'test-tenant', operator: '=' },
+                        { key: 'resourceType', value: 'document', operator: '=' }
+                    ]
+                },
+                {
+                    page: 2,
+                    limit: 10,
+                    sortBy: 'title',
+                    sortDirection: 'DESC'
+                }
+            );
+        });
+
+        it('should handle search errors in header search', async () => {
+            mockUseCase.searchObjects.mockRejectedValue(new Error('Database connection failed'));
+
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', {});
+
+            expect(result.status).toBe(500);
+            expect(result.error).toBe('Database connection failed');
+        });
+
+        it('should return empty results when no resources found in header search', async () => {
+            const mockSearchResult = {
+                results: [],
+                total: 0
+            };
+            mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
+
+            const result = await controller.searchResourcesByHeaders('nonexistent-tenant', 'document', {});
+
+            expect(result.status).toBe(200);
+            expect(result.data).toEqual(mockSearchResult);
+        });
+    });
 });

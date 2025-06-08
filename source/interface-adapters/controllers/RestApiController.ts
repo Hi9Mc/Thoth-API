@@ -279,4 +279,39 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
             };
         }
     }
+
+    /**
+     * GET /resources
+     * Search resources by tenant and type using headers
+     */
+    async searchResourcesByHeaders(tenantId: string, resourceType: string, query: any = {}): Promise<{ 
+        status: number; 
+        data?: { results: T[], total: number }; 
+        error?: string 
+    }> {
+        try {
+            const condition: SearchOption<T> = {
+                logic: 'AND' as any,
+                conditions: [
+                    { key: 'tenantId', value: tenantId, operator: '=' as any },
+                    { key: 'resourceType', value: resourceType, operator: '=' as any }
+                ]
+            };
+
+            const pagination: PaginationOption<T> = {
+                page: query.page || 1,
+                limit: query.limit || 20,
+                sortBy: query.sortBy,
+                sortDirection: query.sortDirection
+            };
+
+            const result = await this.useCase.searchObjects(condition, pagination);
+            return { status: 200, data: result };
+        } catch (error) {
+            return { 
+                status: 500, 
+                error: error instanceof Error ? error.message : 'Internal server error' 
+            };
+        }
+    }
 }

@@ -118,6 +118,21 @@ X-Tenant-Id: {tenantId}
 X-Resource-Type: {resourceType}
 ```
 
+#### Search Resources with Headers
+```
+GET /resources?page=1&limit=20&sortBy=title&sortDirection=ASC
+X-Tenant-Id: {tenantId}
+X-Resource-Type: {resourceType}
+```
+Returns a list of resources matching the tenant and type specified in headers.
+
+**Example:**
+```bash
+GET /resources?page=1&limit=10
+X-Tenant-Id: my-company
+X-Resource-Type: document
+```
+
 ## Response Format
 
 All endpoints return JSON responses with consistent structure:

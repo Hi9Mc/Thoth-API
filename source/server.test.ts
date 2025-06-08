@@ -45,7 +45,8 @@ const mockRestController = {
     getResourceByIdWithHeaders: jest.fn(),
     createResourceByIdWithHeaders: jest.fn(),
     updateResourceByIdWithHeaders: jest.fn(),
-    deleteResourceByIdWithHeaders: jest.fn()
+    deleteResourceByIdWithHeaders: jest.fn(),
+    searchResourcesByHeaders: jest.fn()
 };
 
 // Mock implementations
@@ -324,7 +325,8 @@ describe('Server.ts Configuration', () => {
                     'GET /api-docs': 'API documentation (Swagger UI)',
                     'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
                     'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
-                    'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type'
+                    'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type',
+                    'GET /resources': 'Header-based search resources (requires X-Tenant-Id and X-Resource-Type headers)'
                 }
             };
 
@@ -333,6 +335,8 @@ describe('Server.ts Configuration', () => {
             expect(apiInfo.endpoints).toHaveProperty('GET /health');
             expect(apiInfo.endpoints).toHaveProperty('GET /api');
             expect(apiInfo.endpoints).toHaveProperty('GET /api-docs');
+            expect(apiInfo.endpoints).toHaveProperty('GET /resources');
+            expect(apiInfo.endpoints['GET /resources']).toBe('Header-based search resources (requires X-Tenant-Id and X-Resource-Type headers)');
         });
     });
 

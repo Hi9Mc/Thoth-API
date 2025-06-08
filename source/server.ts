@@ -97,7 +97,8 @@ app.get('/api', (req: Request, res: Response) => {
             'GET /api-docs': 'API documentation (Swagger UI)',
             'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
             'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
-            'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type'
+            'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type',
+            'GET /resources': 'Header-based search resources (requires X-Tenant-Id and X-Resource-Type headers)'
         }
     });
 });
@@ -234,12 +235,17 @@ app.delete('/resources/:resourceId', async (req: Request, res: Response) => {
     }
 });
 
-// Search endpoint: /tenants/{tenantId}/resources/{resourceType}
-app.get('/tenants/:tenantId/resources/:resourceType', async (req: Request, res: Response) => {
+// Header-based search endpoint: /resources
+app.get('/resources', async (req: Request, res: Response) => {
     try {
-        const { tenantId, resourceType } = req.params;
+        const tenantId = req.headers['x-tenant-id'] as string;
+        const resourceType = req.headers['x-resource-type'] as string;
+
+        if (!tenantId || !resourceType) {
+            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
+        }
         
-        const response = await restController.searchResourcesByPath(tenantId, resourceType, req.query);
+        const response = await restController.searchResourcesByHeaders(tenantId, resourceType, req.query);
         res.status(response.status).json(response.data || { error: response.error });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
