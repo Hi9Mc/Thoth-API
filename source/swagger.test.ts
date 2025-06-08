@@ -59,6 +59,7 @@ describe('Swagger Documentation', () => {
 
             // Header-based endpoints
             expect(paths).toHaveProperty('/resources/{resourceId}');
+            expect(paths).toHaveProperty('/resources/search');
         });
 
         it('should have proper HTTP methods for each endpoint', () => {
@@ -73,6 +74,10 @@ describe('Swagger Documentation', () => {
             expect(headerResourceEndpoint).toHaveProperty('post');
             expect(headerResourceEndpoint).toHaveProperty('put');
             expect(headerResourceEndpoint).toHaveProperty('delete');
+
+            const searchEndpoint = swaggerDocument.paths['/resources/search'];
+            expect(searchEndpoint).toHaveProperty('get');
+            expect(searchEndpoint.get.summary).toBe('Search resources by header and query');
         });
 
         it('should define proper schemas', () => {
