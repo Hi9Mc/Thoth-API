@@ -1,5 +1,5 @@
 import { ProjectObject, ProjectObjectKey } from '../../domain/entities/ProjectObject';
-import { SearchOption, PaginationOption } from '../../domain/entities/SearchCriteria';
+import { SearchOption, PaginationOption, SearchParameter, SearchConditionOperator, SearchLogicalOperator } from '../../domain/entities/SearchCriteria';
 import { ProjectObjectUseCase } from '../../application/use-cases/ProjectObjectUseCase';
 
 /**
@@ -281,31 +281,69 @@ export class RestApiController<T extends ProjectObject = ProjectObject> {
     }
 
     /**
-     * GET /resources
-     * Search resources by tenant and type using headers
+     * GET /resources/search
+     * Search resources by optional headers and/or filter query
      */
-    async searchResourcesByHeaders(tenantId: string, resourceType: string, query: any = {}): Promise<{ 
+    async searchResourcesByHeaders(tenantId?: string, resourceType?: string, resourceId?: string, query: any = {}): Promise<{ 
         status: number; 
         data?: { results: T[], total: number }; 
         error?: string 
     }> {
         try {
-            const condition: SearchOption<T> = {
-                logic: 'AND' as any,
-                conditions: [
-                    { key: 'tenantId', value: tenantId, operator: '=' as any },
-                    { key: 'resourceType', value: resourceType, operator: '=' as any }
-                ]
-            };
+            const conditions: SearchParameter<T>[] = [];
+
+            // Add conditions based on provided headers
+            if (tenantId) {
+                conditions.push({ 
+                    key: 'tenantId' as keyof T, 
+                    value: tenantId, 
+                    operator: SearchConditionOperator.EQUALS 
+                });
+            }
+            if (resourceType) {
+                conditions.push({ 
+                    key: 'resourceType' as keyof T, 
+                    value: resourceType, 
+                    operator: SearchConditionOperator.EQUALS 
+                });
+            }
+            if (resourceId) {
+                conditions.push({ 
+                    key: 'resourceId' as keyof T, 
+                    value: resourceId, 
+                    operator: SearchConditionOperator.EQUALS 
+                });
+            }
+
+            // Handle 'q' query parameter for text search
+            if (query.q) {
+                // Add a text search condition - search in data field using LIKE
+                conditions.push({ 
+                    key: 'data' as keyof T, 
+                    value: query.q, 
+                    operator: SearchConditionOperator.LIKE 
+                });
+            }
+
+            const condition: SearchOption<T> | undefined = conditions.length > 0 ? {
+                logic: SearchLogicalOperator.AND,
+                conditions
+            } : undefined;
 
             const pagination: PaginationOption<T> = {
-                page: query.page || 1,
-                limit: query.limit || 20,
+                page: parseInt(query.page) || 1,
+                limit: parseInt(query.limit) || 10,
                 sortBy: query.sortBy,
                 sortDirection: query.sortDirection
             };
 
-            const result = await this.useCase.searchObjects(condition, pagination);
+            const result = condition 
+                ? await this.useCase.searchObjects(condition, pagination)
+                : await this.useCase.searchObjects({
+                    logic: SearchLogicalOperator.AND,
+                    conditions: []
+                }, pagination);
+                
             return { status: 200, data: result };
         } catch (error) {
             return { 

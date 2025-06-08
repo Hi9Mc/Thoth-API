@@ -1,6 +1,7 @@
 import { RestApiController } from './RestApiController';
 import { ProjectObject, ProjectObjectKey } from '../../domain/entities/ProjectObject';
 import { ProjectObjectUseCase } from '../../application/use-cases/ProjectObjectUseCase';
+import { SearchConditionOperator, SearchLogicalOperator } from '../../domain/entities/SearchCriteria';
 
 describe('RestApiController', () => {
     let controller: RestApiController<ProjectObject>;
@@ -331,21 +332,21 @@ describe('RestApiController', () => {
             };
             mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
 
-            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', {});
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', undefined, {});
 
             expect(result.status).toBe(200);
             expect(result.data).toEqual(mockSearchResult);
             expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
                 {
-                    logic: 'AND',
+                    logic: SearchLogicalOperator.AND,
                     conditions: [
-                        { key: 'tenantId', value: 'test-tenant', operator: '=' },
-                        { key: 'resourceType', value: 'document', operator: '=' }
+                        { key: 'tenantId', value: 'test-tenant', operator: SearchConditionOperator.EQUALS },
+                        { key: 'resourceType', value: 'document', operator: SearchConditionOperator.EQUALS }
                     ]
                 },
                 {
                     page: 1,
-                    limit: 20,
+                    limit: 10,
                     sortBy: undefined,
                     sortDirection: undefined
                 }
@@ -366,16 +367,16 @@ describe('RestApiController', () => {
                 sortDirection: 'DESC'
             };
 
-            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', query);
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', undefined, query);
 
             expect(result.status).toBe(200);
             expect(result.data).toEqual(mockSearchResult);
             expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
                 {
-                    logic: 'AND',
+                    logic: SearchLogicalOperator.AND,
                     conditions: [
-                        { key: 'tenantId', value: 'test-tenant', operator: '=' },
-                        { key: 'resourceType', value: 'document', operator: '=' }
+                        { key: 'tenantId', value: 'test-tenant', operator: SearchConditionOperator.EQUALS },
+                        { key: 'resourceType', value: 'document', operator: SearchConditionOperator.EQUALS }
                     ]
                 },
                 {
@@ -390,7 +391,7 @@ describe('RestApiController', () => {
         it('should handle search errors in header search', async () => {
             mockUseCase.searchObjects.mockRejectedValue(new Error('Database connection failed'));
 
-            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', {});
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', undefined, {});
 
             expect(result.status).toBe(500);
             expect(result.error).toBe('Database connection failed');
@@ -403,7 +404,7 @@ describe('RestApiController', () => {
             };
             mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
 
-            const result = await controller.searchResourcesByHeaders('nonexistent-tenant', 'document', {});
+            const result = await controller.searchResourcesByHeaders('nonexistent-tenant', 'document', undefined, {});
 
             expect(result.status).toBe(200);
             expect(result.data).toEqual(mockSearchResult);

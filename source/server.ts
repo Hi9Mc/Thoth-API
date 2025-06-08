@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req: Request, res: Response, next: NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-Id, X-Resource-Type');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-Id, X-Resource-Type, X-Resource-Id');
     
     if (req.method === 'OPTIONS') {
         res.sendStatus(200);
@@ -96,9 +96,9 @@ app.get('/api', (req: Request, res: Response) => {
             'GET /api': 'API information',
             'GET /api-docs': 'API documentation (Swagger UI)',
             'GET|POST|PUT|DELETE /tenants/{tenantId}/resources/{resourceType}/{resourceId}': 'Path-based resource operations',
-            'GET|POST|PUT|DELETE /resources/{resourceId}': 'Header-based resource operations (requires X-Tenant-Id and X-Resource-Type headers)',
+            'GET|POST|PUT|DELETE /resources': 'Header-based resource operations (requires X-Tenant-Id, X-Resource-Type, and X-Resource-Id headers)',
             'GET /tenants/{tenantId}/resources/{resourceType}': 'Search resources by tenant and type',
-            'GET /resources': 'Header-based search resources (requires X-Tenant-Id and X-Resource-Type headers)'
+            'GET /resources/search': 'Header-based search resources (optional headers: X-Tenant-Id, X-Resource-Type, X-Resource-Id; supports q parameter)'
         }
     });
 });
@@ -166,15 +166,15 @@ app.get('/tenants/:tenantId/resources/:resourceType', async (req: Request, res: 
     }
 });
 
-// Header-based endpoints: /resources/{resourceId}
-app.get('/resources/:resourceId', async (req: Request, res: Response) => {
+// Header-based CRUD endpoints: /resources
+app.get('/resources', async (req: Request, res: Response) => {
     try {
-        const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
+        const resourceId = req.headers['x-resource-id'] as string;
 
-        if (!tenantId || !resourceType) {
-            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
+        if (!tenantId || !resourceType || !resourceId) {
+            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id' });
         }
         
         const response = await restController.getResourceByIdWithHeaders(resourceId, tenantId, resourceType);
@@ -184,14 +184,14 @@ app.get('/resources/:resourceId', async (req: Request, res: Response) => {
     }
 });
 
-app.post('/resources/:resourceId', async (req: Request, res: Response) => {
+app.post('/resources', async (req: Request, res: Response) => {
     try {
-        const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
+        const resourceId = req.headers['x-resource-id'] as string;
 
-        if (!tenantId || !resourceType) {
-            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
+        if (!tenantId || !resourceType || !resourceId) {
+            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id' });
         }
         
         const response = await restController.createResourceByIdWithHeaders(resourceId, tenantId, resourceType, req.body);
@@ -201,14 +201,14 @@ app.post('/resources/:resourceId', async (req: Request, res: Response) => {
     }
 });
 
-app.put('/resources/:resourceId', async (req: Request, res: Response) => {
+app.put('/resources', async (req: Request, res: Response) => {
     try {
-        const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
+        const resourceId = req.headers['x-resource-id'] as string;
 
-        if (!tenantId || !resourceType) {
-            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
+        if (!tenantId || !resourceType || !resourceId) {
+            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id' });
         }
         
         const response = await restController.updateResourceByIdWithHeaders(resourceId, tenantId, resourceType, req.body);
@@ -218,14 +218,14 @@ app.put('/resources/:resourceId', async (req: Request, res: Response) => {
     }
 });
 
-app.delete('/resources/:resourceId', async (req: Request, res: Response) => {
+app.delete('/resources', async (req: Request, res: Response) => {
     try {
-        const { resourceId } = req.params;
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
+        const resourceId = req.headers['x-resource-id'] as string;
 
-        if (!tenantId || !resourceType) {
-            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
+        if (!tenantId || !resourceType || !resourceId) {
+            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id, X-Resource-Type, and X-Resource-Id' });
         }
         
         const response = await restController.deleteResourceByIdWithHeaders(resourceId, tenantId, resourceType);
@@ -235,17 +235,14 @@ app.delete('/resources/:resourceId', async (req: Request, res: Response) => {
     }
 });
 
-// Header-based search endpoint: /resources
-app.get('/resources', async (req: Request, res: Response) => {
+// Header-based search endpoint: /resources/search
+app.get('/resources/search', async (req: Request, res: Response) => {
     try {
         const tenantId = req.headers['x-tenant-id'] as string;
         const resourceType = req.headers['x-resource-type'] as string;
-
-        if (!tenantId || !resourceType) {
-            return res.status(400).json({ error: 'Missing required headers: X-Tenant-Id and X-Resource-Type' });
-        }
+        const resourceId = req.headers['x-resource-id'] as string;
         
-        const response = await restController.searchResourcesByHeaders(tenantId, resourceType, req.query);
+        const response = await restController.searchResourcesByHeaders(tenantId, resourceType, resourceId, req.query);
         res.status(response.status).json(response.data || { error: response.error });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
