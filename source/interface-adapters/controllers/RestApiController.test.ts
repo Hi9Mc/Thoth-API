@@ -409,5 +409,63 @@ describe('RestApiController', () => {
             expect(result.status).toBe(200);
             expect(result.data).toEqual(mockSearchResult);
         });
+
+        it('should handle text search with q parameter in header search', async () => {
+            const mockSearchResult = {
+                results: [testObject],
+                total: 1
+            };
+            mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
+
+            const query = { q: 'search text' };
+            const result = await controller.searchResourcesByHeaders('test-tenant', 'document', undefined, query);
+
+            expect(result.status).toBe(200);
+            expect(result.data).toEqual(mockSearchResult);
+            expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
+                {
+                    logic: SearchLogicalOperator.AND,
+                    conditions: [
+                        { key: 'tenantId', value: 'test-tenant', operator: SearchConditionOperator.EQUALS },
+                        { key: 'resourceType', value: 'document', operator: SearchConditionOperator.EQUALS },
+                        { key: 'data', value: 'search text', operator: SearchConditionOperator.LIKE }
+                    ]
+                },
+                {
+                    page: 1,
+                    limit: 10,
+                    sortBy: undefined,
+                    sortDirection: undefined
+                }
+            );
+        });
+
+        it('should handle search with only q parameter and no headers', async () => {
+            const mockSearchResult = {
+                results: [testObject],
+                total: 1
+            };
+            mockUseCase.searchObjects.mockResolvedValue(mockSearchResult);
+
+            const query = { q: 'search text', page: 2, limit: 5 };
+            const result = await controller.searchResourcesByHeaders(undefined, undefined, undefined, query);
+
+            expect(result.status).toBe(200);
+            expect(result.data).toEqual(mockSearchResult);
+            expect(mockUseCase.searchObjects).toHaveBeenCalledWith(
+                {
+                    logic: SearchLogicalOperator.AND,
+                    conditions: [
+                        { key: 'data', value: 'search text', operator: SearchConditionOperator.LIKE }
+                    ]
+                },
+                {
+                    page: 2,
+                    limit: 5,
+                    sortBy: undefined,
+                    sortDirection: undefined
+                }
+            );
+        });
     });
 });
